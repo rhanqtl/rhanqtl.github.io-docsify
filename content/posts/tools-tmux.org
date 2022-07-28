@@ -1,9 +1,7 @@
----
-title: "效率神器 tmux"
-date: 2022-07-28T11:06:53+08:00
-draft: true
-summary: "如题"
----
+#+title: "效率神器 tmux"
+#+date: 2022-07-28T11:06:53+08:00
+#+draft: true
+#+summary: "~"
 
 * 简介
 
