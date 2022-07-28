@@ -2,3 +2,8 @@ baseURL = 'https://blog.rhanqtl.com/'
 languageCode = 'zh-cn'
 title = "rhanqtl 的博客"
 theme = "ananke"
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
