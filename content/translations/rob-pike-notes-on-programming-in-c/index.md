@@ -1,5 +1,5 @@
 ---
-title: "[WIP][译] Rob Pike: Notes on Programming in C"
+title: "[译] Rob Pike: Notes on Programming in C"
 date: 2022-08-14T16:25:08+08:00
 draft: false
 summary: \-
