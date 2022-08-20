@@ -5,7 +5,9 @@ draft: false
 summary: \-
 ---
 
-<pre>
+方程的文法如下：
+
+```plaintext
 equation   ::= side "=" side
 side       ::= operand 
              | operand operator side
@@ -14,4 +16,6 @@ number     ::= one_nine digits
 one_nine   ::= 1 | 2 | ... | 9
 digits     ::= 0 | one_nine
 operator   ::= "+" | "-"
-<pre>
+```
+
+代码见 [main.cpp](./code/main.cpp)
