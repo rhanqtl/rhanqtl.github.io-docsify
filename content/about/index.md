@@ -3,6 +3,11 @@ title: 个人简历
 date: 2019-04-14 02:15:06
 ---
 
+| 版本 | 日期 | 更新内容 |
+|:---|:---|
+| v1.1 | 2022.12.28 | | 更新《工作经历》《兴趣点》《正在学习》，增加《个人作品》 |
+| v1.0 | - | 初始版本 |
+
 # 基本信息
 
 - 性别：男
@@ -16,7 +21,7 @@ date: 2019-04-14 02:15:06
 # 工作经历
 
 - 正式员工
-  - 腾讯（即将于 2022.08 开始）
+  - 腾讯（2022.08 -- 2022.12）
 - 实习
   - 星环信息科技（2021.10 -- 2022.04）
   - 字节跳动（2021.05 -- 2021.08）
@@ -25,28 +30,18 @@ date: 2019-04-14 02:15:06
 
 # 兴趣点
 
-- 学习各种范式的编程语言：Go、Java、C++、Python、Scala、Rust、Ruby、Haskell、SML、Racket、Scheme、Perl、Erlang、TypeScript、C#、Brainfuck ...
-- 函数式编程
-  - 读完 SICP 前三章，完成了大部分习题
-  - 读完《Haskell 趣学指南》前八章
-  - 看过 Coursera 上华盛顿大学的 Programming Languages 的 Part A、Part B 以及 Part C 的一部分（强推！）
-- 数据库系统
-  - 硕士毕业论文题目：MySQL 基于 REDO 日志的热备份系统回放子系统的设计与实现
-    - 做得很烂
+- 学习各种范式的编程语言，（尝试）学过的包括 Go、Java、C++、Python、Scala、Rust、Ruby、Haskell、SML、Racket、Scheme、Perl、Erlang、TypeScript、C#、Brainfuck ...
++ 编译技术
 
 # 正在学习
 
-- Effective Go
-  - [官方英文版](https://go.dev/doc/effective_go)
-  - [第三方中英双语版](https://github.com/bingohuang/effective-go-zh-en)
-- Kubernetes
-  - [Kubernetes 权威指南：从 Docker 到 Kubernetes 实践全接触](https://book.douban.com/subject/35458432/)
-  - Udemy 的 Docker & Kubernetes 课程
-- Docker
-  - Udemy 的 Docker & Kubernetes 课程
++ C++
+  + \[DONE\] [Programming: Principles and Practice Using C++](https://www.stroustrup.com/programming.html) by Bjarne Stroustrup
+  + \[TODO\] [Effective C++](https://www.amazon.com/Effective-Specific-Improve-Programs-Designs/dp/0321334876) by Scott Meyers
+  + \[TODO\] [Inside the C++ Object Model](https://www.amazon.com/Inside-Object-Model-Stanley-Lippman/dp/0201834545) by Stanley B. Lippman
+  + \[TODO\] [The C++ Programming Language](https://www.stroustrup.com/4th.html) by Bjarne Stroustrup
++ \[WIP\] [My First Language Frontend with LLVM Tutorial](https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html)
 
+# 个人作品
 
-# 总结
-
-面试的时候被多次提到缺少实践经验，所以接下来的目标是增加实践经验。
-
+> 可惜，暂时没有拿得出手的
