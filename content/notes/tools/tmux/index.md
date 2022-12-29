@@ -1,8 +1,8 @@
 ---
-title: 效率神器 tmux
+title: "效率神器 tmux"
 date: 2022-07-28T11:06:53+08:00
 draft: true
-summary: ~
+summary: \-
 ---
 
 # 简介
@@ -93,3 +93,6 @@ tmux 的外观如下图所示：
 [^2]: https://linux.die.net/man/1/nohup
 
 [^3]: https://qr.ae/pvPumn
+
+1. [A Quick and Easy Guide to tmux](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/)
+2. https://www.hamvocke.com/blog/a-guide-to-customizing-your-tmux-conf/

@@ -1,6 +1,6 @@
 ---
 title: 个人简历
-date: 2019-04-14 02:15:06
+date: 2019-04-14T02:15:06+08:00
 ---
 
 | 版本 | 日期 | 更新内容 |
@@ -30,7 +30,7 @@ date: 2019-04-14 02:15:06
 
 # 兴趣点
 
-- 学习各种范式的编程语言，（尝试）学过的包括 Go、Java、C++、Python、Scala、Rust、Ruby、Haskell、SML、Racket、Scheme、Perl、Erlang、TypeScript、C#、Brainfuck ...
+- 学习各种范式的编程语言，（尝试）学过的包括 [Go](https://go.dev/)、Java、C++、[Python](https://www.python.org/)、Scala、Rust、Ruby、Haskell、SML、Racket、Scheme、Perl、Erlang、TypeScript、C#、Brainfuck ...
 + 编译技术
 
 # 正在学习
