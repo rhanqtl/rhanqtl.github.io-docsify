@@ -1,4 +1,4 @@
-baseURL = 'https://rhanqtl.github.io'
+baseURL = 'https://rhanqtl.github.io/posts'
 languageCode = 'zh-cn'
 title = "rhanqtl 的博客"
 theme = "ananke"
