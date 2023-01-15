@@ -1,4 +1,4 @@
-baseURL = 'https://rhanqtl.github.io/posts'
+baseURL = 'https://rhanqtl.github.io'
 languageCode = 'zh-cn'
 title = "rhanqtl 的博客"
 theme = "ananke"
@@ -12,3 +12,7 @@ theme = "ananke"
   changefreq = 'weekly'
   filename = 'sitemap.xml'
   priority = 0.5
+
+[params]
+show_reading_time = true
+author = 'rhanqtl'
