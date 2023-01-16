@@ -67,9 +67,10 @@ def my_eval(e: Expr) -> LiteralValueType:
 ```
 
 这种方式的优点在于非常明确，但是缺点如下：
-+ 反射通常性能堪忧
 + 在不支持反射的语言中（例如，C 和 C++），这种方式很难实现（当然，在 C++ 中你可以用 `dynamic_cast`；对于 C，我能想到的一种补救方式是每个 `struct` 关联一个标签，不过既容易出错，又会增加运行期开销，属于雪上加霜）
 + 缺少可扩展性。一方面，如果增加新的节点类型，就需要在 `my_eval` 函数中增加相应的分支；另一方面，如果想要支持对 AST 的其他操作，完全没有可以复用的内容
+
+> 关于反射的效率，参见 StackOverflow 的[这个问题](https://stackoverflow.com/questions/3377576/if-reflection-is-inefficient-when-is-it-most-appropriate)和[这个问题](https://softwareengineering.stackexchange.com/questions/143205/reflection-is-using-reflection-still-bad-or-slow-what-has-changed-with-ref)
 
 这里的核心问题在于：在有 sub-typing 的情况下，如何根据运行期对象的实际类型进行派发，Visitor 模式很好地解决了这个问题。不过，在正式进入 Visitor 模式之前，我们需要先来了解一下静态派发（static dispatching）和动态派发（dynamic dispatching）。
 
