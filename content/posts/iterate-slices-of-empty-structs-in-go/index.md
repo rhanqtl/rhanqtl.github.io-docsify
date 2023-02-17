@@ -7,7 +7,7 @@ summary: "最近看了一篇关于 Go 语言高性能编程的文章，在自己
 
 # 现象
 
-废话不多说直接上代码：
+废话不多说直接上[代码](./src/range_test.go)：
 
 ```go
 package main
@@ -17,36 +17,36 @@ import "testing"
 type Item struct{}
 
 func BenchmarkIndexStructSlice(b *testing.B) {
- var items [1024]Item
- for i := 0; i < b.N; i++ {
-  var tmp Item
-  for j := 0; j < len(items); j++ {
-   tmp = items[j]
-  }
-  _ = tmp
- }
+    var items [1024]Item
+    for i := 0; i < b.N; i++ {
+        var tmp Item
+        for j := 0; j < len(items); j++ {
+            tmp = items[j]
+        }
+        _ = tmp
+    }
 }
 
 func BenchmarkRangeIndexStructSlice(b *testing.B) {
- var items [1024]Item
- for i := 0; i < b.N; i++ {
-  var tmp Item
-  for k := range items {
-   tmp = items[k]
-  }
-  _ = tmp
- }
+    var items [1024]Item
+    for i := 0; i < b.N; i++ {
+        var tmp Item
+        for k := range items {
+            tmp = items[k]
+        }
+        _ = tmp
+    }
 }
 
 func BenchmarkRangeStructSlice(b *testing.B) {
- var items [1024]Item
- for i := 0; i < b.N; i++ {
-  var tmp Item
-  for _, item := range items {
-   tmp = item
-  }
-  _ = tmp
- }
+    var items [1024]Item
+    for i := 0; i < b.N; i++ {
+        var tmp Item
+        for _, item := range items {
+            tmp = item
+        }
+        _ = tmp
+    }
 }
 ```
 
