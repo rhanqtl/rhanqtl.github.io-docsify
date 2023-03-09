@@ -1,18 +1,100 @@
 baseURL = 'https://rhanqtl.github.io'
+title = "rhanqtl"
+theme = "hugo-coder"
 languageCode = 'zh-cn'
-title = "rhanqtl 的博客"
-theme = "ananke"
+defaultContentLanguage = "zh-cn"
 
-[markup]
-  [markup.goldmark]
-    [markup.goldmark.renderer]
-      unsafe = true
+paginate = 20
+
+[markup.highlight]
+  style = "github-dark"
+
+# [markup]
+#   [markup.goldmark]
+#     [markup.goldmark.renderer]
+#       unsafe = true
+
+[languages]
+  [languages.zh-cn]
+    baseURL = "https://rhanqtl.github.io/"
+    weight = 1
+  [languages.en]
+    baseURL = "https://rhanqtl.github.io/en/"
+    weight = 2
+
+[[languages.zh-cn.menu.main]]
+  name = "原创博文"
+  weight = 1
+  url  = "posts/"
+[[languages.zh-cn.menu.main]]
+  name = "翻译"
+  weight = 2
+  url  = "translations/"
+[[languages.zh-cn.menu.main]]
+  name = "喜欢的诗歌"
+  weight = 3
+  url  = "poems/"
+[[languages.zh-cn.menu.main]]
+  name = "作品"
+  weight = 4
+  url  = "projects/"
+[[languages.zh-cn.menu.main]]
+  name = "关于我"
+  weight = 5
+  url  = "about/"
+
+[[languages.en.menu.main]]
+  name = "Posts"
+  weight = 1
+  url  = "posts/"
+[[languages.en.menu.main]]
+  name = "Liked Poems"
+  weight = 2
+  url  = "poems/"
+[[languages.en.menu.main]]
+  name = "Projects"
+  weight = 3
+  url  = "projects/"
+[[languages.en.menu.main]]
+  name = "About"
+  weight = 4
+  url  = "about/"
+
+[params]
+  author    = "rhanqtl"
+  description = "rhanqtl 的个人网站"
+  keywords  = "blog,developer,personal,博客,开发者,个人网站"
+  avatarURL = "images/avatar.jpg"
+
+  show_reading_time = true
+
+[security]
+  [security.exec]
+  allow = 'asciidoctor'
+
+[[params.social]]
+  name = "GitHub"
+  icon = "fa fa-github fa-2x"
+  url = "https://github.com/rhanqtl/"
+[[params.social]]
+  name = "Twitter"
+  icon = "fa fa-twitter fa-2x"
+  url = "https://twitter.com/rhanqtl/"
+# [[params.social]]
+#   name = "RSS"
+#   icon = "fa fa-rss fa-2x"
+#   url = "https://rhanqtl.github.io/index.xml"
+#   rel = "alternate"
+#   type = "application/rss+xml"
+
+[taxonomies]
+  category = "categories"
+  series   = "series"
+  tag      = "tags"
+  author   = "authors"
 
 [sitemap]
   changefreq = 'weekly'
   filename = 'sitemap.xml'
   priority = 0.5
 
-[params]
-show_reading_time = true
-author = 'rhanqtl'

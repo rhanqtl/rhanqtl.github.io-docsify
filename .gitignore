@@ -1,1 +1,11 @@
 build/
+*.yy.c
+*.tab.c
+*.tab.h
+*.lex.c
+lex.yy.c
+*.s
+*.o
+a.out
+
+*.output

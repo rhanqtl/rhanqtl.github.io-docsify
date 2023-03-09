@@ -1,0 +1,40 @@
+---
+---
+
+[[sec:motivation]]
+== 动机
+
+```c
+#include <stdbool.h>
+
+bool foo(char *p, char *q) {
+    *p = 'a';
+    *q = 'b';
+    return *p == 'a';
+}
+```
+
+如果使用 `-O2`，输出为：
+
+```plaintext
+    movb    $97, (%rdi)
+    movb    $98, (%rsi)
+    cmp     $97, (%rdi)
+    sete    %al
+    ret
+```
+
+NOTE: C 中有一个 `restrict` 关键字，可以用来向编译器“承诺”指针不重叠或者不互为 alias，使用该关键字修改 `foo` 的两个参数，会得到
+
+```c
+    movb    $97, (%rdi)
+    movl    $1, %eax
+    movb    $98, (%rsi)
+    ret
+```
+
+== 算法
+
+* domain - ${ x -> possible pointed-to locations }$
+
+为什么需要 

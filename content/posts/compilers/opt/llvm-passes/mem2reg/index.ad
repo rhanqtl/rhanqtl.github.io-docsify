@@ -1,0 +1,190 @@
+---
+title: "mem2reg 源码阅读"
+date: 2023-03-07T08:03:18+08:00
+tags: ["编译器", "编译优化", "LLVM"]
+#series: ["LLVM 源码阅读"]
+summary: \-
+
+draft: true
+---
+
+[[sec:background]]
+== 背景
+
+为了应对栈变量，LLVM 使用了 `alloca` 指令。但是有些 `alloca` 指令其实是不必要的，因此 LLVM 为了减轻用户的负担，引入了一个称为“https://llvm.org/docs/Passes.html#mem2reg-promote-memory-to-register[mem2reg]”的 pass，用于自动地将 `alloca` 变量提升为寄存器变量。
+
+[[sec:experiment]]
+== 实验
+
+为了看看 `mem2reg` 的效果，我们可以来尝试一些例子
+
+=== main 中的局部变量
+
+```c
+// file: demo1.c
+void foo(int x) {
+  printf("x = %d\n", x);
+}
+```
+
+运行如下命令：
+
+[source,bash]
+----
+$ clang -Xclang -Xdisable-O0-optnone -S -emit-llvm demo1.c
+----
+
+NOTE: 在以 `-O0` 运行时，clang 会给函数加上 `optnone` 属性，导致不会进行优化，为了看看 `opt` 的效果，我们需要将这个属性去掉，方法就是加上 `-Xclang ...` 这两个参数。
+
+生成的 LLVM IR 如下（省略了部分内容）：
+
+```llvm
+define void @foo(i32 %0) {
+  %2 = alloca i32, align 4
+  store i32 %0, ptr %2, align 4
+  %3 = load i32, ptr %2, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr @.str, i32 %3)
+  ret void
+}
+```
+
+可以看到参数的 `alloca` 实际上是多余的，完全可以直接用 `%0` 调用 `printf`
+
+这种情况我们可以首先将 `alloca` 干掉：
+
+* `%2` 的 `store` 表示后续使用 `%2` 的地方都可以替换为 `%0`
+* 将 `%3` 替换为 `%0`
+* 将 `%2 = alloca` 干掉
+
+```llvm
+define void @foo(i32 %0) {
+  %4 = call i32 (ptr, ...) @printf(ptr @.str, i32 %0)
+  return void
+}
+```
+
+=== 分支
+
+```c
+// file: demo2.c
+int bar(int x, int y) {
+  if (x > 42) {
+    y += 1;
+  } else {
+    y += 2;
+  }
+  return y;
+}
+```
+
+生成的 LLVM IR 如下：
+
+```llvm
+define i32 @bar(i32 %0, i32 %1) {
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  store i32 %0, ptr %3, align 4
+  store i32 %1, ptr %4, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = icmp sgt i32 %5, 42
+  br i1 %6, label %7, label %10
+
+7:                                  ; preds = %2
+  %8 = load i32, ptr %4, align 4
+  %9 = add nsw i32 %8, 1
+  store i32 %9, ptr %4, align 4
+  br label %13
+
+10:                                 ; preds = %2
+  %11 = load i32, ptr %4, align 4
+  %12 = add nsw i32 %11, 2
+  store i32 %12, ptr %4, align 4
+  br label %13
+
+13:                                 ; preds = %10, %7
+  %14 = load i32, ptr %4, align 4
+  ret i32 %14
+}
+```
+
+
+同样地，这里 `%3` 和 `%4` 都是不必要的，但二者优化方法不同：`%3` 的 def 和 use 在同一个 BB 中，而 `%4` 的 use 存在于多个 BB。
+
+[source,llvm]
+----
+define i32 @bar(i32 %0, i32 %1) {
+  %4 = alloca i32, align 4
+  store i32 %1, ptr %4, align 4
+  %6 = icmp sgt i32 %0, 42
+  br i1 %6, label %7, label %10
+
+  ...
+}
+----
+
+[source,llvm]
+----
+define i32 @bar(i32 %0, i32 %1) {
+  %6 = icmp sgt i32 %0, 42
+  br i1 %6, label %7, label %10
+
+7:                                  ; preds = %2
+  %9 = add nsw i32 %1, 1
+  br label %13
+
+10:                                 ; preds = %2
+  %12 = add nsw i32 %1, 2
+  br label %13
+
+13:                                 ; preds = %10, %7
+  %14 = phi [ %9, 7 ], [ %12, 10 ]
+  ret i32 %14
+}
+----
+
+NOTE: 实际上在这种情况中 LLVM 会改用 https://llvm.org/docs/LangRef.html#select-instruction:[`select`] 指令。
+
+[source,plaintext]
+----
+  %3 = alloca i32, align 4         <
+  %4 = alloca i32, align 4         <
+  store i32 %0, ptr %3, align 4    <
+  store i32 %1, ptr %4, align 4    <
+  %5 = load i32, ptr %3, align 4   <
+  %6 = icmp sgt i32 %5, 42         |    %6 = icmp sgt i32 %0, 42
+  br i1 %6, label %7, label %10         br i1 %6, label %7, label %10
+
+7:                                    7:
+  %8 = load i32, ptr %4, align 4   <
+  %9 = add nsw i32 %8, 1           |    %9 = add nsw i32 %1, 1
+  store i32 %9, ptr %4, align 4    <
+  br label %13                          br label %13
+
+10:                                   10:
+  %11 = load i32, ptr %4, align 4  <
+  %12 = add nsw i32 %11, 2         |    %12 = add nsw i32 %1, 2
+  store i32 %12, ptr %4, align 4   <
+  br label %13                          br label %13
+
+13:                                   13:
+  %14 = load i32, ptr %4, align 4  |    %14 = phi [ %9, 7 ], [ %12, 10 ]
+  ret i32 %14                           ret i32 %14
+----
+
+=== 循环
+
+[source,c]
+----
+// file: demo4.c
+int f(int n) {
+  int sum = 0;
+  for (int i = 0; i < n; i++) {
+    sum += i;
+  }
+  return sum;
+}
+----
+
+== 参考
+
+. https://stackoverflow.com/questions/46513801/llvm-opt-mem2reg-has-no-effect

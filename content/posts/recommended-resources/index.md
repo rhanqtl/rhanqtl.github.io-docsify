@@ -11,6 +11,8 @@ summary: \-
 
 ### 书
 
++ Engineering a Compiler
+  + 讲解编译器的理论知识
 - Crafting Interpreters
   - 就实现技术而言，涵盖了 Tree-Walk 解释器和虚拟机
   - 就语言特性而言，涵盖了字面量、变量、运算符、控制流、FP、OOP

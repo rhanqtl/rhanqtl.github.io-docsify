@@ -1,0 +1,173 @@
+---
+title: "实现一个 LLVM Pass"
+date: 2023-03-07T09:43:32+08:00
+tags: [编译器, LLVM]
+summary: \-
+
+draft: true
+---
+
+:toc:
+:toclevels: 99
+
+[[sec:setup]]
+== 环境搭建
+
+首先，你需要编译 LLVM
+
+NOTE: LLVM 提供了所谓“out of source”的方式实现 pass，但是最终还是要将 pass 的源码加入到 LLVM 的源码树中。详见 https://llvm.org/docs/CMake.html#developing-llvm-passes-out-of-source[Developing LLVM passes out of source]。
+
+[source,bash]
+----
+$ cmake -S . -B build \
+    -G Ninja          \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+    -DLLVM_PARALLEL_COMPILE_JOBS=8 \
+    -DLLVM_PARALLEL_LINK_JOBS=1
+
+$ cmake --build build --target all
+----
+
+NOTE: 你也可以去掉 `-G Ninja` 这一行，但是据说 ninja 的构建速度比 GNU Make 快，尤其是增量构建。
+
+[[sec:code]]
+== 实现 Pass
+
+参考官方文档 https://llvm.org/docs/WritingAnLLVMPass.html[Writing an LLVM Pass]，你可以直接复用 `lib/Transforms/Hello` 的内容。
+
+我们的目标是为每个函数增加一条指令，打印一个 `int32` 值，只需要修改 `runOnFunction`
+
+[source,c++]
+----
+// file: Hello.cpp
+struct Hello : public FunctionPass {
+  // ...
+
+  FunctionCallee log_fn;
+
+  bool doInitialization(Module &M) override {
+    auto &ctx = M.getContext();
+    log_fn = M.getOrInsertFunction(
+        "on_entry", Type::getVoidTy(ctx), Type::getInt32Ty(ctx));
+    // 返回 true 表示 Module 被修改了
+    return true;
+  }
+
+  /* CS6120 的教程里在 runOnFunction 中修改了 Module，这实际上是不被允许的，
+  见 https://llvm.org/docs/WritingAnLLVMPass.html#the-functionpass-class */
+  bool runOnFunction(Function &F) override {
+    HelloCounter++;
+
+    // 确定插入位置
+    auto &entry_blk = F.front();
+    IRBuilder<> builder(&entry_blk.front());
+
+    // 插入 call 指令
+    auto &ctx = F.getContext();
+    Value *args[] = {ConstantInt::get(Type::getInt32Ty(ctx),
+                                      static_cast<uint64_t>(HelloCounter))};
+    builder.CreateCall(log_fn, args);
+
+    // F.viewCFG();
+
+    // 返回 true 表示修改了 Function
+    return true;
+  }
+};
+----
+
+然后，我们来实现 `on_entry` 函数
+
+[source,c]
+----
+// file: rtlib.c
+
+#include <stdint.h>
+#include <stdio.h>
+
+void on_entry(const int32_t x) { printf("value = %d\n", x); }
+----
+
+接下来，编译 `rtlib.c`
+
+[source,bash]
+----
+$ cc -c rtlib.c
+----
+
+编译并优化 `main.c`
+
+[source,bash]
+----
+$ clang -emit-llvm -c main.c -o main.bc
+$ opt -enable-new-pm=0 -load build/lib/libLLVMHello.so -hello < main.bc -o main.bc
+$ llc main.bc -o main.s
+$ gcc main.s rtlib.o
+$ ./a.out
+----
+
+输出为：
+
+....
+value = 3
+value = 2
+value = 1
+I'm now in g.
+....
+
+NOTE: LLVM 从 TODO 版本开始使用新的 Pass Manager，而我们的 pass 使用旧的 `PassManager` 实现，所以需要加上 `-enable-new-pm=0` 参数。
+
+也可以使用 `lli` 来避免编译到本地代码，不过这样需要将 `rtlib.c` 编译为动态库：
+
+[source,bash]
+----
+$ cc -shared -fPIC rtlib.c -o rtlib.so
+----
+
+不需要再进行上面 `llc` `gcc` 等一系列，而是运行：
+
+[source.bash]
+----
+$ lli -load=./rtlib.so main.bc
+----
+
+[[sec:code-newpm]]
+== 实现 Pass -- 使用新 PM
+
+
+[[sec:trouble-shooting]]
+== 可能的问题
+
+=== undefined symbol: EnableABIBreakingChecks
+
+```plaintext
+error: unable to load plugin 'build/lib/LLVMHello.so': 'build/lib/LLVMHello.so: undefined symbol: _ZN4llvm23EnableABIBreakingChecksE'
+```
+
+这是 LLVM 检查 ABI 兼容性的机制，见 https://llvm.org/docs/ProgrammersManual.html#abi-breaking-checks:[ABI Breaking Checks]。
+
+解决方法为在项目配置阶段，确保 `LLVM_ENABLE_ASSERTIONS` 和 `LLVM_ABI_BREAKING_CHECKS` 两个变量的值符合如下情况之一：
+
+- 前者为 `ON`，后者为 `WITH_ASSERTS`
+- 后者为 `FORCE_ON`
+
+`EnableABIBreakingChecks` 这个符号定义在 `lib/Support/ABIBreak.cpp` 文件中：
+
+[source,c++]
+----
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+int EnableABIBreakingChecks;
+#else
+int DisableABIBreakingChecks;
+#endif
+----
+
+默认情况下（此时 https://llvm.org/docs/CMake.html#llvm-related-variables:[`LLVM_ABI_BREAKING_CHECKS`] 为 `WITH_ASSERTS`，而 `LLVM_ENABLE_ASSERTIONS` 为 `ON`）是将宏 `LLVM_ENABLE_ABI_BREAKING_CHECKS` 定义为 `1`，因此会定义 `EnableABIBreakingChecks`，定义了该宏的库也会引用 `EnableABIBreakingChecks`，这样就实现了 ABI 检查的功能。
+
+
+// [[sec:references]]
+== 参考
+
+. https://llvm.org/docs/WritingAnLLVMPass.html
+. https://www.cs.cornell.edu/~asampson/blog/llvm.html
