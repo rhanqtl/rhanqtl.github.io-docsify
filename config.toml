@@ -14,50 +14,71 @@ paginate = 20
 #     [markup.goldmark.renderer]
 #       unsafe = true
 
-[languages]
-  [languages.zh-cn]
-    baseURL = "https://rhanqtl.github.io/"
-    weight = 1
-  [languages.en]
-    baseURL = "https://rhanqtl.github.io/en/"
-    weight = 2
+# [languages]
+#   [languages.zh-cn]
+#     baseURL = "https://rhanqtl.github.io/"
+#     weight = 1
+#   [languages.en]
+#     baseURL = "https://rhanqtl.github.io/en/"
+#     weight = 2
 
-[[languages.zh-cn.menu.main]]
+# [[languages.zh-cn.menu.main]]
+#   name = "原创博文"
+#   weight = 1
+#   url  = "posts/"
+# [[languages.zh-cn.menu.main]]
+#   name = "翻译"
+#   weight = 2
+#   url  = "translations/"
+# [[languages.zh-cn.menu.main]]
+#   name = "喜欢的诗歌"
+#   weight = 3
+#   url  = "poems/"
+# [[languages.zh-cn.menu.main]]
+#   name = "作品"
+#   weight = 4
+#   url  = "projects/"
+# [[languages.zh-cn.menu.main]]
+#   name = "关于我"
+#   weight = 5
+#   url  = "about/"
+
+# [[languages.en.menu.main]]
+#   name = "Posts"
+#   weight = 1
+#   url  = "posts/"
+# [[languages.en.menu.main]]
+#   name = "Liked Poems"
+#   weight = 2
+#   url  = "poems/"
+# [[languages.en.menu.main]]
+#   name = "Projects"
+#   weight = 3
+#   url  = "projects/"
+# [[languages.en.menu.main]]
+#   name = "About"
+#   weight = 4
+#   url  = "about/"
+
+[[menu.main]]
   name = "原创博文"
   weight = 1
   url  = "posts/"
-[[languages.zh-cn.menu.main]]
+[[menu.main]]
   name = "翻译"
   weight = 2
   url  = "translations/"
-[[languages.zh-cn.menu.main]]
+[[menu.main]]
   name = "喜欢的诗歌"
   weight = 3
   url  = "poems/"
-[[languages.zh-cn.menu.main]]
+[[menu.main]]
   name = "作品"
   weight = 4
   url  = "projects/"
-[[languages.zh-cn.menu.main]]
+[[menu.main]]
   name = "关于我"
   weight = 5
-  url  = "about/"
-
-[[languages.en.menu.main]]
-  name = "Posts"
-  weight = 1
-  url  = "posts/"
-[[languages.en.menu.main]]
-  name = "Liked Poems"
-  weight = 2
-  url  = "poems/"
-[[languages.en.menu.main]]
-  name = "Projects"
-  weight = 3
-  url  = "projects/"
-[[languages.en.menu.main]]
-  name = "About"
-  weight = 4
   url  = "about/"
 
 [params]
