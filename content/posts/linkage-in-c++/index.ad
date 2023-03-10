@@ -1,0 +1,68 @@
+---
+title: "C++ 中的 Linkage"
+date: 2023-03-10T16:07:59+08:00
+tags: [C++]
+summary: C++ 由于其复杂的编译模型，常常会出现一些链接相关的问题，本文总结了 C++ 中相关的知识点。
+
+draft: true
+---
+
+[sec:translation-units]
+== Translation Unit
+
+[sec:approaches]
+== 指定 Linkage
+
+extern
+
+static
+
+匿名 namespace
+
+inline
+
+[sec:the-odr-rule]
+== ODR 规则
+
+== Header Guard
+
+[source,c++]
+----
+// file: foo.hpp
+#ifndef FOO_H
+#define FOO_H
+
+void do_stuff();
+
+#endif  // FOO_H
+----
+
+[source,c++]
+----
+// file: foo.cpp
+#include "foo.hpp"
+
+void do_stuff() {
+    // ...
+}
+
+// file: bar.cpp
+#include "foo.hpp"
+
+// file: baz.cpp
+#include "foo.hpp"
+----
+
+[NOTE]
+====
+C/C++ 这种使用头文件的方式实际上会导致效率的降低——每次 `#include` 都需要读取整个文件，即使所有的内容都被包围在 header guard 中——如果一个头文件被引用了几十次、几百次，那么这个成本可想而知。这也是 C\+\+20 引入 module 的原因之一。
+
+Plan9 的解决办法是限制使用 `#include` 的位置。
+====
+
+[sec:linkers]
+== 链接器
+
+=== 强符号 vs. 弱符号
+
+=== 强引用 vs. 弱引用
