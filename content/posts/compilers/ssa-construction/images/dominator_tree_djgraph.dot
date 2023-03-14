@@ -1,0 +1,17 @@
+digraph {
+    splines=false;
+
+    A [group=g1];
+    {rank=same; B [group=g2]; G [group=g4]}
+    {rank=same; C [group=g3]; E [group=g1]}
+    {rank=same; D [group=g3]; F [group=g1]}
+
+    A -> {B; G};
+    B -> {C; E};
+    C -> D;
+    E -> F;
+    D -> E [style=dashed]
+    F -> G [style=dashed]
+
+    A -> E [style=invis]
+}

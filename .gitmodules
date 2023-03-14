@@ -2,3 +2,9 @@
 	path = themes/hugo-coder
 	url = https://github.com/luizdepra/hugo-coder.git
 
+[submodule "themes/ananke"]
+	path = themes/ananke
+	url = git@github.com:theNewDynamic/gohugo-theme-ananke.git
+[submodule "themes/ascii-press"]
+	path = themes/ascii-press
+	url = https://github.com/bric3/ascii-press.git

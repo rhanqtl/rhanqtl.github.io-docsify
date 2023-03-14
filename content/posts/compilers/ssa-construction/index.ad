@@ -1,0 +1,128 @@
+---
+title: "构造 SSA 形式"
+date: 2023-03-13T10:25:27+08:00
+tags: ["编译器", "静态分析", "SSA"]
+summary: \-
+
+draft: false
+---
+
+转换到 SSA 形式大体上分为两个步骤：
+
+. 插入 phi 函数，确保对于任意的变量 `v`，`USES(v)` 中的每一个点有且仅有 `v` 的一个 reaching definition。这也称为“live-range splitting”；
+. 重命名 `v` 的所有定义，给每个定义赋予唯一的名字（换言之，重命名 `v` 的所有 live-range）。
+
+== Dominance Frontier
+
+用 `DF(n)` 表示 `n` 的 dominance frontier，其中元素 `x` 为 `n` dominate `x` 的某个前驱顶点，但是不 strictly dominate `x`。
+
+[[fig:df-ex-1]]
+.Dominance Frontier 例子（1）
+image::images/df-1.png[]
+
+其中：
+
+|===
+|n |DOM      |DF |n |DOM     |DF
+
+|r |r        | - |C |r, A, C |D, E
+|A |r, A     | - |D |r, A, D |A, E
+|B |r, A, B  | D |E |r, A, E |-
+|===
+
+插入 &phi; 节点的算法如下：
+
+[[algo:insert-phi-functions]]
+.算法：插入 &phi; 节点（摘自 SSA Book）
+image::images/algo-insert-phi-functions.png[]
+
+这是典型的 BFS 算法。
+
+有几个注意点：
+
+* 由于 &phi; 节点本身是变量的定义，因此可能存在一种情况，即插入 &phi; 节点后又需要递归地处理被修改节点的 DF；
+* 此处使用 `F` 来避免在同一个 BB 中插入同一个变量的多个 &phi; 节点。这是因为同一变量不同 BB 的 DF 可能重合，而所有的情况最终都合并在同一个 &phi; 节点中处理，因此只要某一次处理某个 BB 的 DF 时插入了 &phi; 节点，后续就不需要再插入了。
+
+.Iterated Dominance Frontier
+****
+为了数学上的方便，先驱们给<<algo:insert-phi-functions>> 计算过程中涉及到的所有 BB 进行了单独的定义，称为“iterated dominance frontier”，具体定义如下：
+
+. `DF~1~(S) = DF(S)`
+. `DF~i+1~(S) = DF(UNION(S, DF~i~(S)))`
+
+最后达到的不动点用 `DF^+^(S)` 表示，该集合即为某个变量的“iterated dominance frontier”。实际上就是 DF(S) 的传递闭包。
+
+例如 <<fig:df-ex-1>> 中，`DF^+^({B, C, D}) = {A, D, E}`。
+
+这样，上述算法就可以定义为在 `DF^+^(S)` 的起始处插入 &phi; 节点。
+****
+
+=== Dominator Tree
+
+这里其实还遗留一个问题：如何计算 DF。当然你可以根据定义来做，不过如果能够设计更巧妙的数据结构，我们就能得到更简单的算法。
+
+[quote,Fred P. Brooks, The Mythical Man Month (1975)]
+____
+Show me your flowchart and conceal your tables, and I shall continue to be mystified. Show me your tables, and I won't usually need your flowchart; it'll be obvious.
+____
+
+这个更巧妙的数据结构就是“dominator tree”。先来直观的感受下。
+
+.示例 CFG
+image::images/dominator-tree-cfg.png[]
+
+其 dominator tree 如下：
+
+image::images/dominator-tree-dgraph.png[]
+
+不过为了更好地支持 DF 的计算，我们需要在 dominator tree 的基础上加入一种称为 J-edge 的边，对于一条 J-edge a -> b，a 不能够 strictly dominate b。扩展后的如下所示（用虚线表示）：
+
+image::images/dominator-tree-djgraph.png[]
+
+这里注意，对于一条 J-edge a -> b，有如下事实：a 的任意祖先 x 都 strictly dominate a，同时由于 a 是 b 的前驱，那么对于所有不能够 strictly dominate b 的 x，b 必然在 DF(x) 中。
+
+然后，我们就可以定义算法了：
+
+.算法：计算 DF（摘自 SSA Book）
+image::images/algo-calc-df.png[]
+
+=== Join Set
+
+对于给定的顶点集合 `S`，`JOIN-SET(S)` 是 S 中所有 join node 的集合。
+
+所谓“join node”，是指能够从 S 中两个或多个不同的顶点经过不相交的路径到达的顶点。
+
+实际上还有另一种更加直观地表示。我们先来进一步解读一下 DF 的定义。
+
+// 考虑如下命题：考虑 CFG 中两个 BB X 和 Y，其中 X 是 Y 的前驱（即，存在一条边 X -> Y）。如果某个 BB A 能够 dominate X，那么必然有 A &ne; Y。我们不正式地证明一下：如果 A = X，那么显然因为 X &ne; Y，必然有 A &ne; Y；如果 A = Y，那么根据定义 A 无法 strictly dominate Y；
+
+== 变量重命名
+
+// 由于前一阶段已经满足了所谓的“dominance property”（变量的每个 use 都被一个 def dominate），所以重命名阶段基本上只需要对 dominator tree 进行一次 DFS 即可。
+
+重命名阶段基本上就是对 CFG 进行 DFS（当然，DFS 的路径就是 dominator tree）。
+
+.算法：重命名变量（摘自 https://www.cs.utexas.edu/users/mckinley/380C/lecs/07.pdf:[CS380C Lec. 7 的 slide]）
+image::images/algo-rename-vars.png[align=center, title-align=center]
+
+TIP: SSA Book 的变量重命名算法没有常见 DFS 的递归结构，理解起来不够直观。
+
+其中：
+
+* Stacks 是一个从变量 V 到栈的映射，栈顶是 V 最近定义的序号，$$Stacks[*]$$ 初始为空；
+* $$GenName$$ 逻辑如下：
+  ** Counters 是一个从变量 V 到分配给该变量下一个定义的序号的映射，$$Counters[*]$$ 初始值为 0；
+
+image::images/algo-rename-vars-gen-name.png[align=center]
+
+这里需要注意循环的顺序：
+
+* &phi;-node 是在 BB 的起始部分插入的，当前 BB 可能用得到 &phi; 的结果，因此需要把处理 &phi; 节点的循环放在最前面
+  ** 这里其实存在一个小小的问题：如果先将 &phi;-node 的 LHS 重命名，后续在替换 RHS 的时候，是否会自己引用自己？答案是不会，&phi;-node 的 RHS 中的各个变量在处理 DT 中的父节点已经进行了替换，见最外层的第 3 个循环。这又引出一个问题：entry 没有父节点，怎么保证 &phi;-node 的 RHS 被处理呢？答案是，不需要处理，因为 entry 不可能有 &phi;-node
+* 处理完某 BB 的 &phi;-node 后，接下来就是处理普通的指令（这里称为“Statement”），这里嵌套的循环也同样需要注意顺序：先替换，再重命名，否则就有可能自己引用自己；
+
+递归结束后，还需要将本 BB 引入的新名字退栈。
+
+== 案例研究：Go 编译器的 SSA 构造
+
+TODO
