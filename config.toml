@@ -6,8 +6,13 @@ defaultContentLanguage = "zh-cn"
 
 paginate = 20
 
-[markup.highlight]
-  style = "github-dark"
+[markup]
+  [markup.asciidocExt]
+    sectionNumbers = true
+  [markup.tableOfContents]
+    startLevel = 1
+    endLevel   = 5
+    ordered    = false
 
 # [markup]
 #   [markup.goldmark]
@@ -101,12 +106,12 @@ paginate = 20
   name = "Twitter"
   icon = "fa fa-twitter fa-2x"
   url = "https://twitter.com/rhanqtl/"
-# [[params.social]]
-#   name = "RSS"
-#   icon = "fa fa-rss fa-2x"
-#   url = "https://rhanqtl.github.io/index.xml"
-#   rel = "alternate"
-#   type = "application/rss+xml"
+[[params.social]]
+  name = "RSS"
+  icon = "fa fa-rss fa-2x"
+  url = "https://blog.rhanqtl.com/sitemap.xml"
+  rel = "alternate"
+  type = "application/rss+xml"
 
 [taxonomies]
   category = "categories"
@@ -118,4 +123,3 @@ paginate = 20
   changefreq = 'weekly'
   filename = 'sitemap.xml'
   priority = 0.5
-

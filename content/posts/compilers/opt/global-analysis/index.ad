@@ -7,9 +7,6 @@ summary: \-
 draft: true
 ---
 
-:toc:
-:toclevels: 100
-
 [[domination]]
 == Domination
 
@@ -62,8 +59,6 @@ while work_list is not empty
 end
 ```
 
-=== 转换为 SSA 形式
-
 
 == 循环优化
 
@@ -71,8 +66,7 @@ end
 
 所谓“natural loop”，是由“回边”（back-edge）定义的
 
-____
+.图论中的回边
+****
 很巧的是，图论中也有所谓的“回边”
-
-
-____
+****

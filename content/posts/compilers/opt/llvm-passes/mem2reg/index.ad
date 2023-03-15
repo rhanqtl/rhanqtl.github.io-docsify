@@ -1,8 +1,8 @@
 ---
-title: "mem2reg 源码阅读"
+title: "mem2reg"
 date: 2023-03-07T08:03:18+08:00
 tags: ["编译器", "编译优化", "LLVM"]
-#series: ["LLVM 源码阅读"]
+# series: ["LLVM 源码阅读"]
 summary: \-
 
 draft: true
@@ -11,14 +11,16 @@ draft: true
 [[sec:background]]
 == 背景
 
-为了应对栈变量，LLVM 使用了 `alloca` 指令。但是有些 `alloca` 指令其实是不必要的，因此 LLVM 为了减轻用户的负担，引入了一个称为“https://llvm.org/docs/Passes.html#mem2reg-promote-memory-to-register[mem2reg]”的 pass，用于自动地将 `alloca` 变量提升为寄存器变量。
+为了应对栈变量，LLVM 使用了 https://llvm.org/docs/LangRef.html#alloca-instruction:[alloca] 指令。然而有些 alloca 指令其实是不必要的，但是让前端来负责去除这样的 alloca 指令又会增加很多难度，因此 LLVM 引入了一个称为“link:https://llvm.org/docs/Passes.html#mem2reg-promote-memory-to-register[mem2reg]”的 pass，用于自动地将 alloca 变量提升为寄存器变量。
+
+本文旨在以 mem2reg 为一个切入点深入学习 LLVM。
 
 [[sec:experiment]]
 == 实验
 
-为了看看 `mem2reg` 的效果，我们可以来尝试一些例子
+为了看看 mem2reg 的效果，我们可以来尝试一些例子
 
-=== main 中的局部变量
+=== 函数参数
 
 ```c
 // file: demo1.c
@@ -185,6 +187,431 @@ int f(int n) {
 }
 ----
 
+=== 指针
+
+[source,c]
+----
+void foo() {
+  int a = 42;
+  int *p = &a;
+}
+----
+
+生成代码如下:
+
+[source,llvm]
+----
+define void @foo() {
+  %1 = alloca i32, align 4
+  %2 = alloca ptr, align 8
+  store i32 42, ptr %1, align 4
+  store ptr %1, ptr %2, align 8
+  ret i32 0
+}
+----
+
+其中 `%1` 由于作为了 `store` 的 value operand，不能被去掉，但是在 `%2` 被去掉之后，`%1` 只剩下一个 store，可以被去掉了。因此我们的 mem2reg 还需要以不动点的方式运行：
+
+[source,c++]
+----
+while (true) {
+  // 1. find AllocaInst's can be promoted
+  // 2. if not found, exit the loop
+  // 3. promote those AllocaInst's
+}
+----
+
+
+== 自己实现一个 mem2reg pass
+
+不难发现，提升 `alloca` 变量是围绕着 `store` 和 `load` 两类指令进行的，具体地：
+
+* `store` 变量标志着当前 `alloca` 变量的值发生了改变；
+* `load` 指令可以替换为当前 `alloca` 变量的值；
+* 将 `alloca` 变量替换为寄存器变量后，可能会涉及到插入 &phi;-node 和重命名的问题，这基本上跟构造 SSA 的过程一样；
+* 完成替换后，需要删除无用的 `store`、`load` 和 `alloca`。
+
+=== 框架
+
+TIP: 你需要先了解如何在 LLVM 中实现一个 pass，参见 <<bib:writing-an-llvm-pass-new-pm>>。
+
+在 `include/llvm/Transforms/Utils` 中创建文件 `MyMemToReg.h`，加入如下的内容：
+
+[source,c++]
+----
+#ifndef LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H
+#define LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H
+
+#include "llvm/IR/PassManager.h"
+
+namespace llvm {
+
+class Function;
+
+class MyMemToRegPass : public PassInfoMixin<MyMemToRegPass> {
+public:
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
+
+private:
+  void insertPHINodes(ForwardIDFCalculator &IDF);
+  void rename(DomTreeNode *DN);
+  void collectGarbage();
+};
+
+}
+
+#endif  // LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H
+----
+
+TIP: 如果不了解 SSA 形式的构建过程，可以参考 link:{{< ref "/posts/compilers/ssa-construction" >}}[这篇文章]
+
+我们的 pass 分为三步：
+
+. insertPHINodes 插入 &phi;-node。这需要知道
+  .. 哪些 `alloca` 变量能够被提升；
+  .. 对于能够被提升的 `alloca` 变量，我们需要知道其定义的所有 BB，用于计算 iterated dominance frontier
+. rename 重命名
+  .. 对于 dominator tree 的所有 BB
+    ... 用 store 和 &phi;-node 的值作为变量当前的值
+    ... 将 load 的所有 User 替换为变量当前的值
+  .. 对于该 BB 的所有后继，在其所有 &phi;-node 添加对应变量的引用
+  .. 对于 dominator tree 的所有子节点递归进行重命名
+  .. 回退变量的值到进入本 BB 之前的位置，同时记录哪些指令可以被删除
+. collectGarbage 删除无用指令
+
+上述的步骤有一个待解决的问题：我们需要事先知道 Instruction 和变量的对应关系，才能正确地及逆行修改。
+
+为了达成上述的目的，我们需要如下的代码：
+
+[source,c++]
+----
+class MyMemToReg {
+private:
+  struct VariableInfo {
+    AllocaInst *Alloca;
+    SmallPtrSet<BasicBlock *, 32> DefBlocks;
+    std::vector<Value *> DefStack;
+
+    VariableInfo(AllocaInst *AI) : Alloca(AI) {}
+  };
+
+  DenseMap<Instruction *, std::shared_ptr<VariableInfo>> InstToVarInfo;
+  std::vector<Instruction *> TrashList;
+  std::vector<std::shared_ptr<VariableInfo>> VarInfos;
+
+  /**
+   * @brief collect definitions and uses of alloca variables
+   *
+   * @return true the variable can be promoted
+   * @return false the variable cannot be promoted
+   */
+  bool linkDefsAndUsesToVar(std::shared_ptr<VariableInfo> VarInfo);
+};
+----
+
+我们先来实现 `run`：
+
+[source,c++]
+----
+PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
+  // all alloca instructions are in the entry block
+  for (auto &InstRef : F.getEntryBlock()) {
+    if (auto *AI = dyn_cast<AllocaInst>(&InstRef)) {
+      auto VarInfo = std::make_shared<VariableInfo>(AI);
+      if (!linkDefsAndUsesToVar(VarInfo)) {
+        continue;
+      }
+      // can be promoted, remember it
+      VarInfos.push_back(VarInfo);
+    }
+  }
+
+  auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
+  ForwardIDFCalculator IDF(DT);
+  insertPHINodes(IDF);
+
+  auto *DN = DT.getNode(&F.getEntryBlock());
+  rename(DN);
+
+  collectGarbage();
+}
+----
+
+`linkDefsAndUsesToVar` 比较简单，这里不再贴出代码。需要注意的是，因为 alloca 变量是不会用于 &phi;-node 的，因此只需要考虑 store 和 load 指令。其中 store 指令要注意我们关心的变量是用作目标（即 `store i32 4, int32* %v` 这样，更具体地，应该是 `getOperand(1)`），而不是用作被存储的数据。
+
+`insertPHINodes` 也比较简单，同样不在贴出代码。这里需要注意的是新增的 &phi;-node 是一次定义，应该加入到 `InstToVarInfo` 中。此处指创建 &phi;-node 而不增加内容，因为只有在重命名阶段才知道变量的名字和 BB 是什么。
+
+`rename` 是最复杂的函数，不过基本上就是构建 SSA 的实现。首先，我们需要进行记录和替换。尽管在定义时从变量的角度看比较直观，但是在实现时从指令的角度会更直观。
+
+[source,c++]
+----
+void rename(DomTreeNode *DN) {
+  auto &BB = *DN->getBlock();
+  for (auto &InstRef : BB) {
+    auto *Inst = &InstRef;
+    std::shared_ptr<VariableInfo> VarInfo;
+    if (isa<StoreInst>(&InstRef) && (VarInfo = InstToVarInfo[Inst])) {
+      // most recent value of the variable is operand #0
+      VarInfo->DefStack.push_back(Inst->getOperand(0));
+    } else if (isa<PHINode>(&InstRef) && (VarInfo = InstToVarInfo[Inst])) {
+      VarInfo->DefStack.push_back(Inst);
+    } else if (isa<LoadInst>(&InstRef) && (VarInfo = InstToVarInfo[Inst])) {
+      if (VarInfo->DefStack.empty()) {
+        auto *TheUndef = UndefValue::get(Inst->getType());
+        Inst.replaceAllUsesWith(TheUndef);
+      } else {
+        Inst.replaceAllUsesWith(VarInfo->DefStack.back());
+      }
+    }
+  }
+}
+----
+
+下一步是填充所有后继的 &phi;-node：
+
+[source,c++]
+----
+void rename(DomTreeNode *DN) {
+  // ...
+  for (auto I = succ_begin(&BB), E = succ_end(&BB); I != E; I++) {
+    for (auto &InstRef : **I) {
+      PHINode *PHI;
+      std::shared_ptr<VariableInfo> VarInfo;
+      if ((PHI = dyn_cast<PHINode>(&InstRef)) &&
+          (VarInfo = InstToVarInfo[&InstRef])) {
+        PHI->addIncoming(VarInfo->DefStack.back(), &BB);
+      }
+    }
+  }
+
+  for (auto *DNChild : DN->children()) {
+    rename(DNChild);
+  }
+}
+----
+
+`rename` 的最后，我们需要进行清理工作，并标记出哪些 `Instruction` 是需要被移除的
+
+[source,c++]
+----
+void rename(DomTreeNode *DN) {
+  // ...
+  for (auto &InstRef : BB) {
+    Instruction *Inst = &InstRef;
+    std::shared_ptr<VariableInfo> VarInfo;
+    if (isa<StoreInst>(Inst) && (VarInfo = InstToVarInfo[Inst])) {
+      VarInfo->DefStack.pop_back();
+      TrashList.push_back(Inst);
+    } else if (isa<PHINode>(Inst) && (VarInfo = InstToVarInfo[Inst])) {
+      VarInfo->DefStack.pop_back();
+    } else if (isa<LoadInst>(Inst) && InstToVarInfo[Inst]) {
+      TrashList.push_back(Inst);
+    }
+  }
+}
+----
+
+最后的 `collectGarbage` 只需要根据 `VarInfos` 和 `TrashList` 的指示调用 `eraseFromParent` 就好了。
+
+== LLVM 的实现
+
+LLVM 的实现总体上讲是一个大循环：
+
+. 收集 entry block 中能够提升的 alloca 变量；
+. 如果没有能够提升的变量，退出循环；否则，将这些变量提升；
+. 回到步骤 1。
+
+=== 判断能否提升
+
+如 `isAllocaPromotable` 的注释所说的：“Only allow direct and non-volatile loads and stores”。
+
+mem2reg 只允许被提升变量的 uses 包含某些特定的指令，而且这些 uses 也必须满足一定的限制。目前（LLVM17）这些指令包括：LoadInst、StoreInst、IntrinsicInst、BitCastInst、GetElementPtrInst 和 AddrSpaceCastInst。
+
+LoadInst 的分支中如下的测试比较令人疑惑（StoreInst 也有类似的）:
+
+[source,c++]
+----
+if (const LoadInst *LI = dyn_cast<LoadInst>(U)) {
+  //                      vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+  if (LI->isVolatile() || LI->getType() != AI->getAllocatedType())
+    return false;
+}
+----
+
+这个在文档中没有说明，不过通过翻 Git 历史（link:https://github.com/llvm/llvm-project/commit/074561a4a22f610d756109170285d8626c4cc3bc[这个] 和 https://reviews.llvm.org/D109259[这个]）看到了原因：
+
+____
+Alloca promotion can only deal with cases where the load/store types match the alloca type (it explicitly does not support bitcasted load/stores).
+
+With https://llvm.org/docs/OpaquePointers.html[opaque pointers] this is no longer enforced through the pointer type, so add an explicit check.
+____
+
+至于 volatile，参见 https://llvm.org/docs/LangRef.html#volatile-memory-accesses[Volatile Memory Access]。
+
+[quote,LLVM Programmer's Manual]
+____
+A volatile load or store may have additional target-specific semantics. Any volatile operation can have side effects, and any volatile operation can read and/or modify state which is not accessible via a regular load or store in this module. Volatile operations may use addresses which do not point to memory (like MMIO registers). This means the compiler may not use a volatile operation to prove a non-volatile access to that address has defined behavior.
+____
+
+=== 实施提升
+
+TODO: droppable user
+TODO: 如果将 probe 和 assume 移除了，如何保留原来的功能？
+TODO: removeIntrinsicUsers 为什么要过滤掉 void 类型的 Inst（目前应该只有 probe 是 void 的，但是 probe 本身是可以 droppable）
+TODO: 为什么“non-instructions are always dominated”
+
+.LLVM 的 Intrinsic Function
+****
+LLVM 的 intrinsic function 是由 LLVM 编译器特殊处理的函数。这些函数通常低级操作，要么在源语言中无法表达，要么用普通的函数调用实现成本太高。Intrinsic function 提供了更多的优化空间，例如，LLVM 可以将它们内联，特化或者用 target-specific 指令代替（摘录自 ChatGPT 的回答）。
+
+这些函数具有众所周知的名称和语义，并且需要遵循某些限制。总的来说，这些内在函数代表了 LLVM 语言的扩展机制，在添加到语言中时不需要更改 LLVM 中的所有变换<<bib:llvm-langref>>。
+
+* `llvm.pseudoprobe` 用于加入探针，可以进行 PGO
+* `llvm.assume` 用于为优化器和代码生成器提供无法通过代码本身提供的信息，例如在某个程序点假设 `x > 0`
+****
+
+removeIntrinsicUsers 结束之后，我们只需要关心 load 和 store 即可。
+
+promoteSingleBlockAlloca 有一个比较特殊的点——当发现一个 load 之前没有任何 store 时，直觉上将 load 的 uses 替换为 undef 就好（因为当前情况是所有的 load 和 store 都在同一个 BB 中），但是 LLVM 进行了分情况考虑：
+
+* 如果没有任何 store，将 load 替换为 undef
+* 否则，返回 false 用通用逻辑
+
+TIP: 这里 `llvm::lower_bound` 返回的是紧跟着 load 的 store 的索引，因此如果 `it == begin()`，因为这 load 之前没有 store
+
+关键在于，这里考虑的*仅仅是* load 和 store，但是还有 alloca！mem2reg 只考虑 entry 中的 alloca，也就是说 alloca 一定 dominate 所有的 store 和 load。考虑如下的 BB：
+
+image::images/only-in-one-bb.png[]
+
+这里 `%gotcha` 虽然一开始是 undef，但是后面会被修改。
+
+.等价 C 代码
+****
+如下代码会产生上述行为：
+
+[source,c]
+----
+int gotcha;
+for (int i = 0; i < 10; i++) {
+  int t = gotcha;
+  t++;
+  gotcha = t;
+}
+----
+****
+
+`PromoteMem2Reg::ComputeLiveInBlocks` 用来进行 liveness 分析。liveness 是指 TODO。这主要是为了消除无用的 &phi;-node，也就是说，最终 mem2reg 的结果是 pruned 形式。
+
+分析的流程也比较直观：
+
+. 从 uses 开始，先将没有 live-in 的 block 剔除，这里的逻辑有一点绕
++
+[source,c++]
+----
+for (BasicBlock::iterator I = BB->begin();; ++I) {
+  if (StoreInst *SI = dyn_cast<StoreInst>(I)) {
+    if (SI->getOperand(1) != AI)
+      continue;
+
+    LiveInBlockWorklist[i] = LiveInBlockWorklist.back();
+    LiveInBlockWorklist.pop_back();
+    --i;
+    --e;
+    break;
+  }
+
+  if (LoadInst *LI = dyn_cast<LoadInst>(I))
+    if (LI->getOperand(0) == AI)
+      break;
+}
+----
+进入这个循环时能够确定的是，`BB` 包含 `AI` 的 def 和 use，为了确定是否 live-in，我们需要确定 def 和 use 出现的先后顺序——如果嫌出现的是 def，那么没有 live-in，需要将 BB 从 work list 中删除；如果先出现的是 use，那么 live-in，保留。为了实现这个逻辑，这里使用了两个并列的、可能跳出循环的 `if`，找到的是第一个使用 `AI` 的 load 或者 store。如果找到的是 store，那么说明没有 live-in，否则，说明 live-in。
+. 然后就是经典的 backward data-flow analysis
+
+结束 liveness 分析，就可以开始进行插入 &phi;-node 和 rename 的工作了。
+
+TODO: 为什么要对 phi-block 进行排序？
+
+插入 &phi;-node 比较简单，就是，因为已经有了 IDF，
+
+RenamePass 是手动将递归转换为了迭代，见 commit 记录：
+
+[quote,Chris Lattner]
+____
+Change the rename pass to be "tail recursive", only adding N-1 successors
+to the worklist, and handling the last one with a 'tail call'. This speeds
+up PR1432 from 2.0578s to 2.0012s (2.8%)
+____
+
+
+[source,c++]
+----
+NextIteration:
+  // 当前 BB 是否有 phi-node? 注意, 我们假设 BB 中所有的 phi-node 一定出现
+  // 在开头的部分
+  if (PHINode *APN = dyn_cast<PHINode>(BB->begin())) {
+    // 由于我们的 phi-node 是在 BB 的最前面插入的, 所以如果
+    // PhiToAllocaMap.count(APN) 不为 0, 那么说明我们在当前 BB 插入了
+    // phi-node.
+    //
+    // 有了这两个保证, 我们可以确认当前 BB 有需要 rename 的 phi-node.
+    if (PhiToAllocaMap.count(APN)) {
+      /* ... */
+      // 第一个被处理的 BB 是 entry, 但是由于 entry 没有 phi-node,
+      // 所以控制流根本不会走到这里, 因此不会崩溃.
+      unsigned NumEdge = llvm::count(successors(Pred), BB);
+    }
+  }
+----
+
+接下来就是给 &phi;-node 添加入边，流程很直观：首先获取 &phi;-node 的迭代器（也就是 Instruction 的迭代器，调用 `BB.begin` 即可），然后给遇到的每一个 &phi;-node 调用 `addIncoming` 添加入边，同时还要记得由于 &phi;-node 本身就是变量的 def，要用它更新变量当前的值。
+
+不过，这里有一个需要注意的问题：我们并没有记录 mem2reg 在当前 BB 添加了多少 &phi;-node，因此需要其他的方式确定何时停止。LLVM 解决的方式基于一个前提，即，新添加的（没有调用过 `addIncoming` 的）&phi;-node 的 `getNumOperands` 的结果都是一样的，一旦遇见一个不一样的，说明就不是 mem2reg 添加的，就可以终止。
+
+[source,c++]
+----
+do {
+  ++PNI;
+  APN = dyn_cast<PHINode>(PNI);
+  if (!APN)
+    break;
+  // 这里的判断基于下一个待处理的 phi-node
+} while (APN->getNumOperands() == NewPHINumOperands);
+----
+
+TODO: 什么情况下 pred 到 BB 会有多条边
+TODO: 疑惑，直觉上来讲，新增的 &phi;-node 的 `getNumOperands` 应该就是 0，那么直接用 0 就好了，为啥还要进行一次调用？
+
+处理完 &phi;-node 后，就是替换 load 和 store 的部分，这里很直观，跟我们自己实现的差不多，就不再赘述了。
+
+最后是“递归”的部分。首先将 BB 和 Pred 都更新为第一个 succ，然后将其他的后继 BB 都添加到 work list 中（这一步要跟外面的 while 循环配合才能完成使命），最后，跳回 `RenamePass` 的开始。本质上完成了一个先序 DFS 遍历。
+
+==== 去掉无用的 &phi;-node
+
+`PromoteMem2Reg::run` 的最后部分属于优化，为了将一些无用的 &phi;-node 去掉。
+
+如注释所说的：
+
+[quote]
+____
+Loop over all of the PHI nodes and see if there are any that we can get rid of because they merge all of the same incoming values.  This can happen due to undef values coming into the PHI nodes.  This process is iterative, because eliminating one PHI node can cause others to be removed.
+____
+
+TODO: non-deterministic def-use chain 会有什么影响吗？
+TODO: unreachable bb 为什么还需要处理？不会被去掉吗？
+
+.递归转迭代
+****
+
+****
+
+TODO: 如果恰好有在 mem2reg 之前已经存在的 phi 的 incoming 跟 mem2reg 添加的一样，岂不是会出问题？
+
+[bibliography]
 == 参考
 
 . https://stackoverflow.com/questions/46513801/llvm-opt-mem2reg-has-no-effect
+. [[[bib:writing-an-llvm-pass-new-pm,1]]] https://llvm.org/docs/WritingAnLLVMNewPMPass.html[Writing an LLVM Pass (with the new pass manager)]
+. [[[bib:llvm-progman,2]]] https://llvm.org/docs/ProgrammersManual.html:[LLVM Programmer's Manual]
+. [[[bib:llvm-langref,3]]] https://llvm.org/docs/LangRef.html[LLVM Language Reference]
+

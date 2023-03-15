@@ -1,0 +1,11 @@
+digraph {
+    entry [style=invis]
+    bb [shape=rect, label="%x = load i32, ptr %gotcha\l%y = add nsw i32 %x, i32 1\lstore i32 %y, ptr %gotcha\l"]
+    dummy [shape=rect, label=""]
+    exit  [style=invis]
+
+    entry -> bb;
+    bb -> dummy;
+    dummy -> bb;
+    dummy -> exit;
+}

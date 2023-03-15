@@ -6,6 +6,8 @@ build/
 lex.yy.c
 *.s
 *.o
+*.ll
+*.bc
 a.out
 
 *.output

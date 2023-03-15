@@ -7,10 +7,10 @@ summary: C++ 由于其复杂的编译模型，常常会出现一些链接相关�
 draft: true
 ---
 
-[sec:translation-units]
+[[sec:translation-units]]
 == Translation Unit
 
-[sec:approaches]
+[[sec:approaches]]
 == 指定 Linkage
 
 extern
@@ -21,7 +21,7 @@ static
 
 inline
 
-[sec:the-odr-rule]
+[[sec:the-odr-rule]]
 == ODR 规则
 
 == Header Guard
@@ -60,7 +60,7 @@ C/C++ 这种使用头文件的方式实际上会导致效率的降低——每�
 Plan9 的解决办法是限制使用 `#include` 的位置。
 ====
 
-[sec:linkers]
+[[sec:linkers]]
 == 链接器
 
 === 强符号 vs. 弱符号
