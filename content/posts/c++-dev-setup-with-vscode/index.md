@@ -4,7 +4,7 @@ date: 2023-02-13T10:50:20+08:00
 tags: [C/C++, VS Code, 工具链]
 summary: \-
 
-draft: true
+draft: false
 ---
 
 # 安装 VS Code
@@ -95,9 +95,29 @@ cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 
 # 调试
 
-TODO
+安装插件 CodeLLDB（ID 为 `vadimcn.vscode-lldb`）。在 `launch.json` 加入如下内容：
+
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/a.out",
+            "args": [ "-arg1", "-arg2" ],
+            // "preLaunchTask": ""
+        }
+    ]
+}
+```
 
 # 参考
 
 1. [My C/C++ Dev Setup with VSCode - ANT-HEM'S TECH BLOG](https://ahemery.dev/2020/08/24/c-cpp-vscode/)
 2. [为vscode配置clangd](https://juejin.cn/post/7126880493668139021)
+3. [CodeLLDB Manual](https://github.com/vadimcn/codelldb/blob/v1.9.0/MANUAL.md)

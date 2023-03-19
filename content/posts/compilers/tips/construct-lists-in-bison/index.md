@@ -4,7 +4,7 @@ date: 2023-02-11T21:02:57+08:00
 tags: [编译器, Bison]
 summary: 本文介绍在 Bison 中如何生成列表
 
-draft: true
+draft: false
 ---
 
 # 前言 #

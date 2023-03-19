@@ -8,6 +8,6 @@ lex.yy.c
 *.o
 *.ll
 *.bc
-a.out
+*.out
 
 *.output

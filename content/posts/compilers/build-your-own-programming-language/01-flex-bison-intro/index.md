@@ -4,7 +4,7 @@ date: 2023-02-04T11:27:54+08:00
 tags: [编译器, Lex, Yacc, Flex, Bison]
 summary: \-
 
-draft: true
+draft: false
 ---
 
 > 本文需要你有一定的 C/C++ 基础和编译原理基础，包括：了解 C/C++ 基本的编译模型，词法分析（会写正则表达式）、语法分析（至少能够定义文法，了解 BNF 更好）

@@ -1,4 +1,9 @@
 ---
+title: "别名分析"
+date: 2023-03-19
+tags: ["编译优化", "静态分析"]
+
+draft: true
 ---
 
 [[sec:motivation]]
@@ -37,4 +42,4 @@ NOTE: C 中有一个 `restrict` 关键字，可以用来向编译器“承诺”
 
 * domain - ${ x -> possible pointed-to locations }$
 
-为什么需要 
+为什么需要
