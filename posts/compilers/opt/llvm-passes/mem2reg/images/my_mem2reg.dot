@@ -1,0 +1,17 @@
+digraph {
+    entry [style=invis];
+    exit [style=invis];
+
+    phi [label="插入 φ-node"];
+    phi.idf [label="计算 IDF"];
+    phi.insert [label="创建 φ-node"];
+
+    rename [label="重命名"];
+    rename.replace [label="替换"];
+    rename.replace.store [label="记录变量 AI 新值"];
+    rename.replace.load  [label="将所有 use 替换为变量 AI 当前值"];
+    rename.replace.phi   [label="记录变量 AI 新值];
+    rename.patch   [label="给 φ-node 添加入边"];
+    rename
+
+}
