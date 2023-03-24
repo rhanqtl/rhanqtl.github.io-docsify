@@ -3,21 +3,35 @@ title = "rhanqtl"
 theme = "hugo-coder"
 languageCode = 'zh-cn'
 defaultContentLanguage = "zh-cn"
-
 paginate = 20
+enableEmoji = true
 
 [markup]
   [markup.asciidocExt]
     sectionNumbers = true
+    safeMode = "unsafe"
+    [markup.asciidocExt.attributes]
+      source-highlighter = "rouge"
+      rouge-style = "molokai"
+      icons = "font"
+      # tip-caption = "💡"
   [markup.tableOfContents]
     startLevel = 1
     endLevel   = 5
     ordered    = false
 
-# [markup]
-#   [markup.goldmark]
-#     [markup.goldmark.renderer]
-#       unsafe = true
+[security]
+   enableInlineShortcodes = false
+  [security.exec]
+    allow = ["^dart-sass-embedded$", "^go$", "^npx$", "^postcss$", "^asciidoctor$"]
+    osEnv = ["(?i)^((HTTPS?|NO)_PROXY|PATH(EXT)?|APPDATA|TE?MP|TERM)$"]
+  [security.funcs]
+    getenv = "^HUGO_"
+  # http:
+  #   methods:
+  #   - (?i)GET|POST
+  #   urls:
+  #   - .*
 
 # [languages]
 #   [languages.zh-cn]
@@ -91,12 +105,10 @@ paginate = 20
   description = "rhanqtl 的个人网站"
   keywords  = "blog,developer,personal,博客,开发者,个人网站"
   avatarURL = "images/avatar.jpg"
+  # gravatar  = "images/avatar.jpg"
+  customCSS = ["css/molokai.css","css/custom.css"]
 
   show_reading_time = true
-
-[security]
-  [security.exec]
-  allow = 'asciidoctor'
 
 [[params.social]]
   name = "GitHub"

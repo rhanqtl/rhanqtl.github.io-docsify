@@ -8,3 +8,9 @@
 [submodule "themes/ascii-press"]
 	path = themes/ascii-press
 	url = https://github.com/bric3/ascii-press.git
+[submodule "themes/archie"]
+	path = themes/archie
+	url = git@github.com:athul/archie.git
+[submodule "themes/whiteplain"]
+	path = themes/whiteplain
+	url = https://github.com/taikii/whiteplain.git
