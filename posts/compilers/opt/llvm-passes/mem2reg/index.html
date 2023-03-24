@@ -1,35 +1,274 @@
-<!doctype html><html lang=zh-cn><head><title>mem2reg · rhanqtl</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=color-scheme content="light dark"><meta name=author content="rhanqtl"><meta name=description content="
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+  <title>
+  mem2reg · rhanqtl
+</title>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+
+
+
+
+<meta name="author" content="rhanqtl">
+<meta name="description" content="
 \-
 
-"><meta name=keywords content="blog,developer,personal,博客,开发者,个人网站"><meta name=twitter:card content="summary"><meta name=twitter:title content="mem2reg"><meta name=twitter:description content="
+">
+<meta name="keywords" content="blog,developer,personal,博客,开发者,个人网站">
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="mem2reg"/>
+<meta name="twitter:description" content="
 \-
 
-"><meta property="og:title" content="mem2reg"><meta property="og:description" content="
+"/>
+
+<meta property="og:title" content="mem2reg" />
+<meta property="og:description" content="
 \-
 
-"><meta property="og:type" content="article"><meta property="og:url" content="https://rhanqtl.github.io/posts/compilers/opt/llvm-passes/mem2reg/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2023-03-07T08:03:18+08:00"><meta property="article:modified_time" content="2023-03-07T08:03:18+08:00"><link rel=canonical href=https://rhanqtl.github.io/posts/compilers/opt/llvm-passes/mem2reg/><link rel=preload href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as=font type=font/woff2 crossorigin><link rel=stylesheet href=/css/coder.min.0669b62fc2c181a12a4ba10be9984e385c9a5e83dc7cb7ae3759ad0b98d7e8b2.css integrity="sha256-Bmm2L8LBgaEqS6EL6ZhOOFyaXoPcfLeuN1mtC5jX6LI=" crossorigin=anonymous media=screen><link rel=stylesheet href=/css/molokai.min.5a772179137f76a20e9f3b85125ac4d4b2ba9e877e72fc48b5434a0a88eca640.css integrity="sha256-WncheRN/dqIOnzuFElrE1LK6nod+cvxItUNKCojspkA=" crossorigin=anonymous media=screen><link rel=stylesheet href=/css/custom.min.79e5c878b74c6420a9af1e46d76fc5c90af4569034eea66cef6d2358f4111a6d.css integrity="sha256-eeXIeLdMZCCprx5G12/FyQr0VpA07qZs720jWPQRGm0=" crossorigin=anonymous media=screen><link rel=icon type=image/png href=/images/favicon-32x32.png sizes=32x32><link rel=icon type=image/png href=/images/favicon-16x16.png sizes=16x16><link rel=apple-touch-icon href=/images/apple-touch-icon.png><link rel=apple-touch-icon sizes=180x180 href=/images/apple-touch-icon.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/images/safari-pinned-tab.svg color=#5bbad5><meta name=generator content="Hugo 0.111.3"></head><body class="preload-transitions colorscheme-light"><div class=float-container><a id=dark-mode-toggle class=colorscheme-toggle><i class="fa fa-adjust fa-fw" aria-hidden=true></i></a></div><main class=wrapper><nav class=navigation><section class=container><a class=navigation-title href=/>rhanqtl</a>
-<input type=checkbox id=menu-toggle>
-<label class="menu-button float-right" for=menu-toggle><i class="fa fa-bars fa-fw" aria-hidden=true></i></label><ul class=navigation-list><li class=navigation-item><a class=navigation-link href=/posts/>原创博文</a></li><li class=navigation-item><a class=navigation-link href=/translations/>翻译</a></li><li class=navigation-item><a class=navigation-link href=/poems/>喜欢的诗歌</a></li><li class=navigation-item><a class=navigation-link href=/projects/>作品</a></li><li class=navigation-item><a class=navigation-link href=/about/>关于我</a></li></ul></section></nav><div class=content><section class="container post"><article><header><div class=post-title><h1 class=title><a class=title-link href=https://rhanqtl.github.io/posts/compilers/opt/llvm-passes/mem2reg/>mem2reg</a></h1></div><div class=post-meta><div class=date><span class=posted-on><i class="fa fa-calendar" aria-hidden=true></i>
-<time datetime=2023-03-07T08:03:18+08:00>March 7, 2023</time></span>
-<span class=reading-time><i class="fa fa-clock-o" aria-hidden=true></i>
-阅读时间：12 分钟</span></div><div class=tags><i class="fa fa-tag" aria-hidden=true></i>
-<span class=tag><a href=/tags/%E7%BC%96%E8%AF%91%E5%99%A8/>编译器</a></span>
-<span class=separator>•</span>
-<span class=tag><a href=/tags/%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96/>编译优化</a></span>
-<span class=separator>•</span>
-<span class=tag><a href=/tags/llvm/>LLVM</a></span></div></div></header><div class=post-content><div class=sect1><h2 id=sec:background>1. 背景</h2><div class=sectionbody><div class=paragraph><p>为了应对栈变量，LLVM 引入了 <a href=https://llvm.org/docs/LangRef.html#alloca-instruction:>alloca</a> 指令，以 C 语言为例，前端可以简单地将每个局部变量映射到一个 alloca 指令。然而，有些 alloca 指令其实是不必要的，不过让前端来负责简化它们会增加很多难度，因此 LLVM 引入了一个称为“<a href=https://llvm.org/docs/Passes.html#mem2reg-promote-memory-to-register>mem2reg</a>”的 pass，用于自动地将 alloca 变量提升为寄存器变量。</p></div><div class=paragraph><p>本文旨在以 mem2reg 为切入点深入学习 LLVM。</p></div></div></div><div class=sect1><h2 id=sec:experiment>2. 实验</h2><div class=sectionbody><div class=paragraph><p>为了看看 mem2reg 的效果，我们可以来尝试一些例子</p></div><div class="admonitionblock tip"><table><tbody><tr><td class=icon><i class="fa icon-tip" title=Tip></i></td><td class=content><div class=paragraph><p>编译命令为 <code>clang -S -emit-llvm -Xclang -disable-O0-optnone -fno-discard-value-names <em>/path/to/src</em></code>，其中，<code>-disable-O0-optnone</code> 是为了禁止 clang 在优化级别为 <code>-O0</code> 时给函数加上 <code>optnone</code> 属性，这个属性会让 PassManager 跳过可选的优化（包括 mem2reg），参见 <a href=#bib:opt-no-effect>[1]</a>；<code>-fno-discard-value-names</code> 是为了保留变量的名字，否则 LLVM IR 中所有的变量都会变成匿名的<a href=#bib:llvm-langref>[4]</a>，不便于阅读。</p></div><div class=paragraph><p>优化命令为 <code>opt -passes=mem2reg -S <em>/path/to/ll-file</em> [ > <em>/path/to/opt-result</em> ]</code></p></div></td></tr></tbody></table></div><div class=sect2><h3 id=_仅包含一条语句>2.1. 仅包含一条语句</h3><div class=paragraph><p>一种情况是只有参数，没有局部变量。</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>void foo(int x) {
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://rhanqtl.github.io/posts/compilers/opt/llvm-passes/mem2reg/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-03-07T08:03:18+08:00" />
+<meta property="article:modified_time" content="2023-03-07T08:03:18+08:00" />
+
+
+
+
+<link rel="canonical" href="https://rhanqtl.github.io/posts/compilers/opt/llvm-passes/mem2reg/">
+
+
+<link rel="preload" href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as="font" type="font/woff2" crossorigin>
+
+
+  
+  
+  <link rel="stylesheet" href="/css/coder.min.0669b62fc2c181a12a4ba10be9984e385c9a5e83dc7cb7ae3759ad0b98d7e8b2.css" integrity="sha256-Bmm2L8LBgaEqS6EL6ZhOOFyaXoPcfLeuN1mtC5jX6LI=" crossorigin="anonymous" media="screen" />
+
+
+
+
+
+
+
+
+ 
+  
+    
+    <link rel="stylesheet" href="/css/molokai.min.5a772179137f76a20e9f3b85125ac4d4b2ba9e877e72fc48b5434a0a88eca640.css" integrity="sha256-WncheRN/dqIOnzuFElrE1LK6nod&#43;cvxItUNKCojspkA=" crossorigin="anonymous" media="screen" />
+  
+
+  
+    
+    <link rel="stylesheet" href="/css/custom.min.79e5c878b74c6420a9af1e46d76fc5c90af4569034eea66cef6d2358f4111a6d.css" integrity="sha256-eeXIeLdMZCCprx5G12/FyQr0VpA07qZs720jWPQRGm0=" crossorigin="anonymous" media="screen" />
+  
+
+
+
+
+
+<link rel="icon" type="image/png" href="/images/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/images/favicon-16x16.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+
+<meta name="generator" content="Hugo 0.111.3">
+
+
+
+
+
+</head>
+
+
+
+
+<body class="preload-transitions colorscheme-light">
+  
+<div class="float-container">
+    <a id="dark-mode-toggle" class="colorscheme-toggle">
+        <i class="fa fa-adjust fa-fw" aria-hidden="true"></i>
+    </a>
+</div>
+
+
+  <main class="wrapper">
+    <nav class="navigation">
+  <section class="container">
+    <a class="navigation-title" href="/">
+      rhanqtl
+    </a>
+    
+      <input type="checkbox" id="menu-toggle" />
+      <label class="menu-button float-right" for="menu-toggle">
+        <i class="fa fa-bars fa-fw" aria-hidden="true"></i>
+      </label>
+      <ul class="navigation-list">
+        
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/posts/">原创博文</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/translations/">翻译</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/poems/">喜欢的诗歌</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/projects/">作品</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/about/">关于我</a>
+            </li>
+          
+        
+        
+      </ul>
+    
+  </section>
+</nav>
+
+
+    <div class="content">
+      
+  <section class="container post">
+    <article>
+      <header>
+        <div class="post-title">
+          <h1 class="title">
+            <a class="title-link" href="https://rhanqtl.github.io/posts/compilers/opt/llvm-passes/mem2reg/">
+              mem2reg
+            </a>
+          </h1>
+        </div>
+        <div class="post-meta">
+          <div class="date">
+            <span class="posted-on">
+              <i class="fa fa-calendar" aria-hidden="true"></i>
+              <time datetime="2023-03-07T08:03:18&#43;08:00">
+                March 7, 2023
+              </time>
+            </span>
+            <span class="reading-time">
+              <i class="fa fa-clock-o" aria-hidden="true"></i>
+              阅读时间：12 分钟
+            </span>
+          </div>
+          
+          
+          <div class="tags">
+  <i class="fa fa-tag" aria-hidden="true"></i>
+    <span class="tag">
+      <a href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/">编译器</a>
+    </span>
+      <span class="separator">•</span>
+    <span class="tag">
+      <a href="/tags/%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96/">编译优化</a>
+    </span>
+      <span class="separator">•</span>
+    <span class="tag">
+      <a href="/tags/llvm/">LLVM</a>
+    </span></div>
+
+        </div>
+      </header>
+
+      <div class="post-content">
+        
+        <div class="sect1">
+<h2 id="sec:background">1. 背景</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>为了应对栈变量，LLVM 引入了 <a href="https://llvm.org/docs/LangRef.html#alloca-instruction:">alloca</a> 指令，以 C 语言为例，前端可以简单地将每个局部变量映射到一个 alloca 指令。然而，有些 alloca 指令其实是不必要的，不过让前端来负责简化它们会增加很多难度，因此 LLVM 引入了一个称为“<a href="https://llvm.org/docs/Passes.html#mem2reg-promote-memory-to-register">mem2reg</a>”的 pass，用于自动地将 alloca 变量提升为寄存器变量。</p>
+</div>
+<div class="paragraph">
+<p>本文旨在以 mem2reg 为切入点深入学习 LLVM。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:experiment">2. 实验</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>为了看看 mem2reg 的效果，我们可以来尝试一些例子</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>编译命令为 <code>clang -S -emit-llvm -Xclang -disable-O0-optnone -fno-discard-value-names <em>/path/to/src</em></code>，其中，<code>-disable-O0-optnone</code> 是为了禁止 clang 在优化级别为 <code>-O0</code> 时给函数加上 <code>optnone</code> 属性，这个属性会让 PassManager 跳过可选的优化（包括 mem2reg），参见 <a href="#bib:opt-no-effect">[1]</a>；<code>-fno-discard-value-names</code> 是为了保留变量的名字，否则 LLVM IR 中所有的变量都会变成匿名的<a href="#bib:llvm-langref">[4]</a>，不便于阅读。</p>
+</div>
+<div class="paragraph">
+<p>优化命令为 <code>opt -passes=mem2reg -S <em>/path/to/ll-file</em> [ &gt; <em>/path/to/opt-result</em> ]</code></p>
+</div>
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="sect2">
+<h3 id="_仅包含一条语句">2.1. 仅包含一条语句</h3>
+<div class="paragraph">
+<p>一种情况是只有参数，没有局部变量。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">void foo(int x) {
   printf(&#34;x = %d\n&#34;, x);
-}</code></pre></div></div><div class=paragraph><p>生成的 LLVM IR 和优化后的对比如下：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=llvm>define void @foo(i32 %x) {                                   define void @foo(i32 %x) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>生成的 LLVM IR 和优化后的对比如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="llvm">define void @foo(i32 %x) {                                   define void @foo(i32 %x) {
 entry:                                                       entry:
   %x.addr = alloca i32, align 4                           &lt;
   store i32 %x, ptr %x.addr, align 4                      &lt;
   %0 = load i32, ptr %x.addr, align 4                     &lt;
   %call = call i32 (ptr, ...) @printf(ptr @.str, i32 %0)  |    %call = call i32 (ptr, ...) @printf(ptr @.str, i32 %x)
   ret void                                                     ret void
-}                                                            }</code></pre></div></div><div class=paragraph><p>本来要 store/load 一次 <code>%x</code> 用匿名中间结果作为 printf 实参，mem2reg 替换成了 <code>%x</code>。可以想见多个参数应该也是相同的处理。</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>void foo() {
+}                                                            }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>本来要 store/load 一次 <code>%x</code> 用匿名中间结果作为 printf 实参，mem2reg 替换成了 <code>%x</code>。可以想见多个参数应该也是相同的处理。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">void foo() {
   int x = 42;
   x++;
-}</code></pre></div></div><div class=paragraph><p>对比：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=llvm>define void @foo() {                  define void @foo() {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>对比：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="llvm">define void @foo() {                  define void @foo() {
 entry:                                entry:
   %x = alloca i32, align 4         &lt;
   store i32 42, ptr %x, align 4    &lt;
@@ -37,14 +276,30 @@ entry:                                entry:
   %inc = add nsw i32 %0, 1         |   %inc = add nsw i32 42, 1
   store i32 %inc, ptr %x, align 4  &lt;
   ret void                             ret void
-}                                    }</code></pre></div></div></div><div class=sect2><h3 id=_分支>2.2. 分支</h3><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>int bar(int x, int y) {
+}                                    }</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_分支">2.2. 分支</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">int bar(int x, int y) {
   if (x &gt; 42) {
     y += 1;
   } else {
     y += 2;
   }
   return y;
-}</code></pre></div></div><div class=paragraph><p>对比：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=llvm>define i32 @bar(i32 %x, i32 %y) {                define i32 @bar(i32 %x, i32 %y) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>对比：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="llvm">define i32 @bar(i32 %x, i32 %y) {                define i32 @bar(i32 %x, i32 %y) {
 entry:                                           entry:
   %x.addr = alloca i32, align 4               &lt;
   %y.addr = alloca i32, align 4               &lt;
@@ -69,13 +324,41 @@ if.else:                                         if.else:
 if.end:                                          if.end:
   %3 = load i32, ptr %y.addr, align 4         |    %y.addr.0 = phi i32 [ %add, %if.then ], [ %add1, %if.else ]
   ret i32 %3                                  |    ret i32 %y.addr.0
-}                                                }</code></pre></div></div><div class="admonitionblock note"><table><tbody><tr><td class=icon><i class="fa icon-note" title=Note></i></td><td class=content>实际上在这种情况中 LLVM 会改用 <a href=https://llvm.org/docs/LangRef.html#select-instruction:><code>select</code></a> 指令。</td></tr></tbody></table></div></div><div class=sect2><h3 id=_循环>2.3. 循环</h3><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>int foo(int n) {
+}                                                }</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+实际上在这种情况中 LLVM 会改用 <a href="https://llvm.org/docs/LangRef.html#select-instruction:"><code>select</code></a> 指令。
+</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_循环">2.3. 循环</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">int foo(int n) {
   int sum = 0;
   for (int i = 0; i &lt; n; i++) {
     sum += i;
   }
   return sum;
-}</code></pre></div></div><div class=paragraph><p>对比</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code>define i32 @foo(i32 %n) {                         define i32 @foo(i32 %n) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>对比</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code>define i32 @foo(i32 %n) {                         define i32 @foo(i32 %n) {
 entry:                                            entry:
   %n.addr = alloca i32, align 4                &lt;
   %sum = alloca i32, align 4                   &lt;
@@ -109,20 +392,152 @@ for.inc:                                          for.inc:
 for.end:                                          for.end:
   %5 = load i32, ptr %sum, align 4             &lt;
   ret i32 %5                                   |    ret i32 %sum.0
-}                                                 }</code></pre></div></div><div class=paragraph><p>这里跟前面分支都有一个很有趣的点：除了 <code>ret</code>，其他的 terminator 指令都没有发生变化，也就是说，mem2reg 不会改变 CFG。</p></div></div><div class=sect2><h3 id=_指针>2.4. 指针</h3><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>void foo() {
+}                                                 }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里跟前面分支都有一个很有趣的点：除了 <code>ret</code>，其他的 terminator 指令都没有发生变化，也就是说，mem2reg 不会改变 CFG。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_指针">2.4. 指针</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">void foo() {
   int a = 42;
   int *p = &amp;a;
-}</code></pre></div></div><div class=paragraph><p>生成代码如下:</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=llvm>define void @foo() {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>生成代码如下:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="llvm">define void @foo() {
   %a = alloca i32, align 4
   %p = alloca ptr, align 8
   store i32 42, ptr %a, align 4
   store ptr %a, ptr %p, align 8
   ret void
-}</code></pre></div></div><div class=paragraph><p>这里有一个需要注意的点：尽管两条 alloca 最后都能去掉，但是 <code>%a</code> 必须在 <code>%p</code> 之后才能被干掉。这是因为最初 <code>%a</code> 的地址作为了第二条 store 的 value operand，如果去掉，对应的 store 就无法表示；而在 <code>%p</code> 被去掉以后，<code>%a</code> 只剩下一个 use，就可以被去掉了。因此 mem2reg 还需要以不动点的方式运行：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>while (true) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里有一个需要注意的点：尽管两条 alloca 最后都能去掉，但是 <code>%a</code> 必须在 <code>%p</code> 之后才能被干掉。这是因为最初 <code>%a</code> 的地址作为了第二条 store 的 value operand，如果去掉，对应的 store 就无法表示；而在 <code>%p</code> 被去掉以后，<code>%a</code> 只剩下一个 use，就可以被去掉了。因此 mem2reg 还需要以不动点的方式运行：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">while (true) {
   // 1. find AllocaInst&#39;s can be promoted
   // 2. if not found, exit the loop
   // 3. promote those AllocaInst&#39;s
-}</code></pre></div></div></div></div></div><div class=sect1><h2 id=sec:writing-mem2reg>3. 自己实现一个 mem2reg</h2><div class=sectionbody><div class=paragraph><p>不难发现，提升 <code>alloca</code> 变量是围绕着 <code>store</code> 和 <code>load</code> 两类指令进行的，具体地：</p></div><div class=ulist><ul><li><p><code>store</code> 是 def，<code>load</code> 是 use；</p></li><li><p>处理过程跟构建 SSA 很相似，涉及到 φ-node 的插入和重命名（重命名）；</p></li><li><p>完成替换后，需要删除无用的 <code>store</code>、<code>load</code> 和 <code>alloca</code>。</p></li></ul></div><div class="admonitionblock tip"><table><tbody><tr><td class=icon><i class="fa icon-tip" title=Tip></i></td><td class=content>如果不了解 SSA 形式的构建过程，可以参考 <a href=https://rhanqtl.github.io/posts/compilers/ssa-construction/>这篇文章</a></td></tr></tbody></table></div><div class=paragraph><p>因此，大致流程可以是这样的：</p></div><div class="olist arabic"><ol class=arabic><li><p>插入 φ-node</p><div class="olist loweralpha"><ol class=loweralpha type=a><li><p>计算 IDF</p></li><li><p>创建 φ-node</p></li></ol></div></li><li><p>重命名</p><div class="olist loweralpha"><ol class=loweralpha type=a><li><p>对于 BB 中每一条指令</p><div class="olist lowerroman"><ol class=lowerroman type=i><li><p>如果是 store 和 phi，记录变量 AI 的新值</p></li><li><p>如果是 load，将所有 use 替换为 AI 当前值，并删除这条 load</p></li></ol></div></li><li><p>为每个后继中新增的 phi 添加入边</p></li><li><p>对于 dom. tree 中的每个子节点递归重命名</p></li><li><p>删除所有无用的 store</p></li></ol></div></li></ol></div><div class=sect2><h3 id=_框架>3.1. 框架</h3><div class="admonitionblock tip"><table><tbody><tr><td class=icon><i class="fa icon-tip" title=Tip></i></td><td class=content>你需要先了解如何在 LLVM 中实现一个 pass，参见 <a href=#bib:writing-an-llvm-pass-new-pm>[2]</a>。</td></tr></tbody></table></div><div class=paragraph><p>在 <code>include/llvm/Transforms/Utils</code> 中创建文件 <code>MyMemToReg.h</code>，加入如下的内容：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>#ifndef LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:writing-mem2reg">3. 自己实现一个 mem2reg</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>不难发现，提升 <code>alloca</code> 变量是围绕着 <code>store</code> 和 <code>load</code> 两类指令进行的，具体地：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>store</code> 是 def，<code>load</code> 是 use；</p>
+</li>
+<li>
+<p>处理过程跟构建 SSA 很相似，涉及到 φ-node 的插入和重命名（重命名）；</p>
+</li>
+<li>
+<p>完成替换后，需要删除无用的 <code>store</code>、<code>load</code> 和 <code>alloca</code>。</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+如果不了解 SSA 形式的构建过程，可以参考 <a href="https://rhanqtl.github.io/posts/compilers/ssa-construction/">这篇文章</a>
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="paragraph">
+<p>因此，大致流程可以是这样的：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>插入 φ-node</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>计算 IDF</p>
+</li>
+<li>
+<p>创建 φ-node</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>重命名</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>对于 BB 中每一条指令</p>
+<div class="olist lowerroman">
+<ol class="lowerroman" type="i">
+<li>
+<p>如果是 store 和 phi，记录变量 AI 的新值</p>
+</li>
+<li>
+<p>如果是 load，将所有 use 替换为 AI 当前值，并删除这条 load</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>为每个后继中新增的 phi 添加入边</p>
+</li>
+<li>
+<p>对于 dom. tree 中的每个子节点递归重命名</p>
+</li>
+<li>
+<p>删除所有无用的 store</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="_框架">3.1. 框架</h3>
+<div class="admonitionblock tip">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+你需要先了解如何在 LLVM 中实现一个 pass，参见 <a href="#bib:writing-an-llvm-pass-new-pm">[2]</a>。
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="paragraph">
+<p>在 <code>include/llvm/Transforms/Utils</code> 中创建文件 <code>MyMemToReg.h</code>，加入如下的内容：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">#ifndef LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H
 #define LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H
 
 #include &#34;llvm/IR/PassManager.h&#34;
@@ -137,7 +552,27 @@ struct MyMemToRegPass : public PassInfoMixin&lt;MyMemToRegPass&gt; {
 
 } // end namespace llvm
 
-#endif  // LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H</code></pre></div></div><div class="admonitionblock tip"><table><tbody><tr><td class=icon><i class="fa icon-tip" title=Tip></i></td><td class=content>递归这里其实还有另一种做法，可以先处理 φ-node，后面在 LLVM 的 mem2reg 中会见到。</td></tr></tbody></table></div><div class=paragraph><p>先来搭框架（基本上就是前面列出的流程的直接映射）：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>// file: MyMemToReg.cpp
+#endif  // LLVM_TRANSFORMS_UTILS_MYMEMTOREG_H</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+递归这里其实还有另一种做法，可以先处理 φ-node，后面在 LLVM 的 mem2reg 中会见到。
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="paragraph">
+<p>先来搭框架（基本上就是前面列出的流程的直接映射）：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">// file: MyMemToReg.cpp
 PreservedAnalyses MyMemToRegPass::run(Function &amp;F,
                                       FunctionAnalysisManager &amp;AM) {
   // 我们在两个阶段都需要用的 dom. tree
@@ -165,7 +600,15 @@ PreservedAnalyses MyMemToRegPass::run(Function &amp;F,
   // 如前文所述，mem2reg 不会改变 CFG
   PA.preserveSet&lt;CFGAnalyses&gt;();
   return PA;
-}</code></pre></div></div><div class=paragraph><p>接下来是 <code>canPromote</code>，用于判断哪些 alloca 能够提升：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>static bool canPromote(const AllocaInst *AI) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>接下来是 <code>canPromote</code>，用于判断哪些 alloca 能够提升：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">static bool canPromote(const AllocaInst *AI) {
   for (const auto *U : AI-&gt;users()) {
     if (auto *SI = dyn_cast&lt;StoreInst&gt;(U)) {
       // 1. 如果 alloca 是作为被存入的值，不能提升
@@ -188,7 +631,18 @@ PreservedAnalyses MyMemToRegPass::run(Function &amp;F,
     }
   }
   return true;
-}</code></pre></div></div><div class=paragraph><p>为了保持简单，我们这里忽略了 load 和 store 的 volatile 问题。实际上，如果有 volatile，那么是不能提升的，因为 LLVM IR 将 volatile 访问定义为有“可见的副作用”（visible side effects）<a href=#bib:llvm-langref-volatile>[6]</a></p></div><div class=paragraph><p>接下来是 <code>doPromote</code>：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>static void doPromote(const SmallVectorImpl&lt;AllocaInst *&gt; &amp;Allocas,
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>为了保持简单，我们这里忽略了 load 和 store 的 volatile 问题。实际上，如果有 volatile，那么是不能提升的，因为 LLVM IR 将 volatile 访问定义为有“可见的副作用”（visible side effects）<a href="#bib:llvm-langref-volatile">[6]</a></p>
+</div>
+<div class="paragraph">
+<p>接下来是 <code>doPromote</code>：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">static void doPromote(const SmallVectorImpl&lt;AllocaInst *&gt; &amp;Allocas,
                       DominatorTree &amp;DT) {
   // 记录 phi-node 到 alloca 的对应关系
   DenseMap&lt;PHINode *, AllocaInst *&gt; AllocasByPHINode;
@@ -216,7 +670,15 @@ PreservedAnalyses MyMemToRegPass::run(Function &amp;F,
   for (auto *AI : Allocas) {
     AI-&gt;eraseFromParent();
   }
-}</code></pre></div></div><div class=paragraph><p><code>getDefiningBlocks</code> 和 <code>insertPHINodes</code> 很简单，这里不再贴代码解释。重点是 <code>doRename</code>：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>static void
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>getDefiningBlocks</code> 和 <code>insertPHINodes</code> 很简单，这里不再贴代码解释。重点是 <code>doRename</code>：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">static void
 doRename(DomTreeNode *DN,
          DenseMap&lt;AllocaInst *, std::stack&lt;Value *&gt;&gt; &amp;StacksByAlloca,
          DenseMap&lt;PHINode *, AllocaInst *&gt; &amp;AllocasByPHINode) {
@@ -245,7 +707,15 @@ doRename(DomTreeNode *DN,
     }
   }
   ...
-}</code></pre></div></div><div class=paragraph><p>下一步是递归：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>static void doRename(...) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>下一步是递归：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">static void doRename(...) {
   ...
   // 注意这里是修改所有 succ 的 phi-node
   for (auto *S : successors(&amp;BB)) {
@@ -266,7 +736,15 @@ doRename(DomTreeNode *DN,
   for (auto *C : DN-&gt;children()) {
     doRename(C, StacksByAlloca, AllocasByPHINode);
   }
-}</code></pre></div></div><div class=paragraph><p>最后，删除无用的 store，并还原 value stack：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>static void doRename(...) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>最后，删除无用的 store，并还原 value stack：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">static void doRename(...) {
   ...
   // 同样需要使用 make_early_inc_range，这个循环跟第一个很类似
   for (auto &amp;InstRef : make_early_inc_range(BB)) {
@@ -282,39 +760,292 @@ doRename(DomTreeNode *DN,
       StacksByAlloca.find(I-&gt;second)-&gt;second.pop();
     }
   }
-}</code></pre></div></div><div class=paragraph><p>别忘了把 pass 注册到 PassRegistry.def 和 PassBuilder 中。编译之后就可以用 opt 调用了：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=plaintext>$ opt -passes=my-mem-to-reg -S ...</code></pre></div></div><div class=paragraph><p>完整代码参见 <a href=code/MyMemToReg.h>MyMemToReg.h</a> 和 <a href=code/MyMemToReg.cpp>MyMemToReg.cpp</a></p></div></div></div></div><div class=sect1><h2 id=sec:reading-llvm-mem2reg>4. LLVM 的实现</h2><div class=sectionbody><div class=paragraph><p>LLVM 的实现的框架跟我们自己的类似，多了一些优化和细节上的考虑。</p></div><div class="admonitionblock warning"><table><tbody><tr><td class=icon><i class="fa icon-warning" title=Warning></i></td><td class=content>这里比较凌乱，不过尽量保证了大框架的规整。如果你在读代码过程中有一些不理解的问题，可以来看看这里有没有相关内容。更欢迎解答我的疑惑！</td></tr></tbody></table></div><div class=sect2><h3 id=_判断能否提升>4.1. 判断能否提升</h3><div class=paragraph><p>如 <code>isAllocaPromotable</code> 的注释所说的：“Only allow direct and non-volatile loads and stores”。</p></div><div class=paragraph><p>mem2reg 只允许被提升变量的 uses 包含某些特定的指令，而且这些 uses 也必须满足一定的限制。目前（LLVM17）这些指令包括：LoadInst、StoreInst、IntrinsicInst、BitCastInst、GetElementPtrInst 和 AddrSpaceCastInst。</p></div><div class=paragraph><p>LoadInst 的分支中如下的测试比较令人疑惑（StoreInst 也有类似的）:</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>if (const LoadInst *LI = dyn_cast&lt;LoadInst&gt;(U)) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>别忘了把 pass 注册到 PassRegistry.def 和 PassBuilder 中。编译之后就可以用 opt 调用了：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="plaintext">$ opt -passes=my-mem-to-reg -S ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>完整代码参见 <a href="code/MyMemToReg.h">MyMemToReg.h</a> 和 <a href="code/MyMemToReg.cpp">MyMemToReg.cpp</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sec:reading-llvm-mem2reg">4. LLVM 的实现</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>LLVM 的实现的框架跟我们自己的类似，多了一些优化和细节上的考虑。</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+这里比较凌乱，不过尽量保证了大框架的规整。如果你在读代码过程中有一些不理解的问题，可以来看看这里有没有相关内容。更欢迎解答我的疑惑！
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="sect2">
+<h3 id="_判断能否提升">4.1. 判断能否提升</h3>
+<div class="paragraph">
+<p>如 <code>isAllocaPromotable</code> 的注释所说的：“Only allow direct and non-volatile loads and stores”。</p>
+</div>
+<div class="paragraph">
+<p>mem2reg 只允许被提升变量的 uses 包含某些特定的指令，而且这些 uses 也必须满足一定的限制。目前（LLVM17）这些指令包括：LoadInst、StoreInst、IntrinsicInst、BitCastInst、GetElementPtrInst 和 AddrSpaceCastInst。</p>
+</div>
+<div class="paragraph">
+<p>LoadInst 的分支中如下的测试比较令人疑惑（StoreInst 也有类似的）:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">if (const LoadInst *LI = dyn_cast&lt;LoadInst&gt;(U)) {
   //                      vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
   if (LI-&gt;isVolatile() || LI-&gt;getType() != AI-&gt;getAllocatedType())
     return false;
-}</code></pre></div></div><div class=paragraph><p>这个在文档中没有说明，不过通过翻 Git 历史（<a href=https://github.com/llvm/llvm-project/commit/074561a4a22f610d756109170285d8626c4cc3bc>这个</a>和<a href=https://reviews.llvm.org/D109259>这个</a>）看到了原因：</p></div><div class=quoteblock><blockquote><div class=paragraph><p>Alloca promotion can only deal with cases where the load/store types match the alloca type (it explicitly does not support bitcasted load/stores).</p></div><div class=paragraph><p>With <a href=https://llvm.org/docs/OpaquePointers.html>opaque pointers</a> this is no longer enforced through the pointer type, so add an explicit check.</p></div></blockquote></div><div class=paragraph><p>至于 volatile，参见 <a href=#bib:llvm-langref-volatile>[6]</a>。</p></div><div class=quoteblock><blockquote><div class=paragraph><p>A volatile load or store may have additional target-specific semantics. Any volatile operation can have side effects, and any volatile operation can read and/or modify state which is not accessible via a regular load or store in this module. Volatile operations may use addresses which do not point to memory (like MMIO registers). This means the compiler may not use a volatile operation to prove a non-volatile access to that address has defined behavior.</p></div></blockquote><div class=attribution>— LLVM Programmer's Manual</div></div><div class=sidebarblock><div class=content><div class=title>LLVM 的 Intrinsic Function</div><div class=paragraph><p>LLVM 的 intrinsic function 是由 LLVM 编译器特殊处理的函数。这些函数通常低级操作，要么在源语言中无法表达，要么用普通的函数调用实现成本太高。Intrinsic function 提供了更多的优化空间，例如，LLVM 可以将它们内联，特化或者用 target-specific 指令代替（摘录自 ChatGPT 的回答）。</p></div><div class=paragraph><p>这些函数具有众所周知的名称和语义，并且需要遵循某些限制。总的来说，这些内在函数代表了 LLVM 语言的扩展机制，在添加到语言中时不需要更改 LLVM 中的所有变换<a href=#bib:llvm-langref>[4]</a>。</p></div><div class=ulist><ul><li><p><code>llvm.pseudoprobe</code> 用于加入探针，可以进行 PGO</p></li><li><p><code>llvm.assume</code> 用于为优化器和代码生成器提供无法通过代码本身提供的信息，例如在某个程序点假设 <code>x > 0</code></p></li></ul></div></div></div><div class=paragraph><p>TODO: 除了 load/store 之外，其他四个指令的特殊限制暂时还没想明白</p></div></div><div class=sect2><h3 id=_promotemem2regrun>4.2. PromoteMem2Reg::run</h3><div class=paragraph><p>TODO: droppable user
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这个在文档中没有说明，不过通过翻 Git 历史（<a href="https://github.com/llvm/llvm-project/commit/074561a4a22f610d756109170285d8626c4cc3bc">这个</a>和<a href="https://reviews.llvm.org/D109259">这个</a>）看到了原因：</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Alloca promotion can only deal with cases where the load/store types match the alloca type (it explicitly does not support bitcasted load/stores).</p>
+</div>
+<div class="paragraph">
+<p>With <a href="https://llvm.org/docs/OpaquePointers.html">opaque pointers</a> this is no longer enforced through the pointer type, so add an explicit check.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>至于 volatile，参见 <a href="#bib:llvm-langref-volatile">[6]</a>。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>A volatile load or store may have additional target-specific semantics. Any volatile operation can have side effects, and any volatile operation can read and/or modify state which is not accessible via a regular load or store in this module. Volatile operations may use addresses which do not point to memory (like MMIO registers). This means the compiler may not use a volatile operation to prove a non-volatile access to that address has defined behavior.</p>
+</div>
+</blockquote>
+<div class="attribution">
+— LLVM Programmer&#39;s Manual
+</div>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">LLVM 的 Intrinsic Function</div>
+<div class="paragraph">
+<p>LLVM 的 intrinsic function 是由 LLVM 编译器特殊处理的函数。这些函数通常低级操作，要么在源语言中无法表达，要么用普通的函数调用实现成本太高。Intrinsic function 提供了更多的优化空间，例如，LLVM 可以将它们内联，特化或者用 target-specific 指令代替（摘录自 ChatGPT 的回答）。</p>
+</div>
+<div class="paragraph">
+<p>这些函数具有众所周知的名称和语义，并且需要遵循某些限制。总的来说，这些内在函数代表了 LLVM 语言的扩展机制，在添加到语言中时不需要更改 LLVM 中的所有变换<a href="#bib:llvm-langref">[4]</a>。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>llvm.pseudoprobe</code> 用于加入探针，可以进行 PGO</p>
+</li>
+<li>
+<p><code>llvm.assume</code> 用于为优化器和代码生成器提供无法通过代码本身提供的信息，例如在某个程序点假设 <code>x &gt; 0</code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>TODO: 除了 load/store 之外，其他四个指令的特殊限制暂时还没想明白</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_promotemem2regrun">4.2. PromoteMem2Reg::run</h3>
+<div class="paragraph">
+<p>TODO: droppable user
 TODO: removeIntrinsicUsers 为什么要过滤掉 void 类型的 Inst（目前应该只有 probe 是 void 的，但是 probe 本身是可以 droppable）
-TODO: 如果将 probe 和 assume 移除了，如何保留原来的功能？</p></div><div class=paragraph><p>这个函数的流程如下：</p></div><div class="olist arabic"><ol class=arabic><li><p>将所有 trivial 的 alloca 及相关的 store 和 load 移除（包括没有 use 的、只有一个 store 的和所有的 use 在同一个 BB 的）</p></li><li><p>对于非 trivial 的 alloca，进行通用的插入 φ-node 和重命名的操作</p></li><li><p>删除无用的 alloca</p></li><li><p>处理 φ-node 相关的边界情况，包括简化 φ-node 和完善不可达 BB 的 φ-node</p></li></ol></div><div class=paragraph><p>removeIntrinsicUsers 结束之后，我们只需要关心 load 和 store 即可。</p></div><div class=sect3><h4 id=_边界情况>4.2.1. 边界情况</h4><div class=paragraph><p>如注释所说的：</p></div><div class=quoteblock><blockquote><div class=paragraph><p>Loop over all of the PHI nodes and see if there are any that we can get rid of because they merge all of the same incoming values. This can happen due to undef values coming into the PHI nodes. This process is iterative, because eliminating one PHI node can cause others to be removed.</p></div></blockquote></div><div class=paragraph><p>TODO: non-deterministic def-use chain 会有什么影响吗？
-TODO: unreachable bb 为什么还需要处理？不会被去掉吗？</p></div><div class=paragraph><p>关于最后补足 φ-node 的入边，通过入边的数量来区分哪些 φ-node 是本轮 mem2reg 插入的（换句话说，何时停止），那么如果恰好有在 mem2reg 之前已经存在的 phi 的 incoming 跟 mem2reg 添加的数量一样，岂不是会出问题？就目前能想到的情况而言，还好——要么要求前面的 pass 保证做了同样的处理，要么本轮给补充完整，反正是 undef，问题不大。</p></div></div></div><div class=sect2><h3 id=_rewritesinglestorealloca>4.3. rewriteSingleStoreAlloca</h3><div class=paragraph><p>该函数中有一个判断：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>bool StoringGlobalVal = !isa&lt;Instruction&gt;(OnlyStore-&gt;getOperand(0));
+TODO: 如果将 probe 和 assume 移除了，如何保留原来的功能？</p>
+</div>
+<div class="paragraph">
+<p>这个函数的流程如下：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>将所有 trivial 的 alloca 及相关的 store 和 load 移除（包括没有 use 的、只有一个 store 的和所有的 use 在同一个 BB 的）</p>
+</li>
+<li>
+<p>对于非 trivial 的 alloca，进行通用的插入 φ-node 和重命名的操作</p>
+</li>
+<li>
+<p>删除无用的 alloca</p>
+</li>
+<li>
+<p>处理 φ-node 相关的边界情况，包括简化 φ-node 和完善不可达 BB 的 φ-node</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>removeIntrinsicUsers 结束之后，我们只需要关心 load 和 store 即可。</p>
+</div>
+<div class="sect3">
+<h4 id="_边界情况">4.2.1. 边界情况</h4>
+<div class="paragraph">
+<p>如注释所说的：</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Loop over all of the PHI nodes and see if there are any that we can get rid of because they merge all of the same incoming values.  This can happen due to undef values coming into the PHI nodes.  This process is iterative, because eliminating one PHI node can cause others to be removed.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>TODO: non-deterministic def-use chain 会有什么影响吗？
+TODO: unreachable bb 为什么还需要处理？不会被去掉吗？</p>
+</div>
+<div class="paragraph">
+<p>关于最后补足 φ-node 的入边，通过入边的数量来区分哪些 φ-node 是本轮 mem2reg 插入的（换句话说，何时停止），那么如果恰好有在 mem2reg 之前已经存在的 phi 的 incoming 跟 mem2reg 添加的数量一样，岂不是会出问题？就目前能想到的情况而言，还好——要么要求前面的 pass 保证做了同样的处理，要么本轮给补充完整，反正是 undef，问题不大。</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rewritesinglestorealloca">4.3. rewriteSingleStoreAlloca</h3>
+<div class="paragraph">
+<p>该函数中有一个判断：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">bool StoringGlobalVal = !isa&lt;Instruction&gt;(OnlyStore-&gt;getOperand(0));
 /* ... */
 for (/* ... */) {
   if (!StoringGlobalVal) { /* ... */ }
-}</code></pre></div></div><div class=paragraph><p>这里的目的是将所有被 <code>store</code> dominate 的 <code>load</code> 替换成 <code>store</code> 的参数，如果存在没有被 dominate 的走通用流程（这一点通常应该对应于未初始化的局部变量，不过至少在 C11 中，这种行为不是 UB，仅仅会导致读取出来的值是“indetermine”的，因此走通用流程是合理的）。函数的参数（类型为 <code>llvm::Argument</code>）和全局变量（类型为 <code>llvm::GlobalValue</code>）均属于“non-instructions”（也许这个变量的名字改成 <code>StoringNonInstValue</code> 更合适），其中函数参数确保在进入函数体之前就存在了，而且本身作为寄存器变量保证了不会被修改，因此“always dominated”，可以直接替换。不过全局变量其实涉及到一个很小的点。我们来看如下的代码：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>void foo() {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里的目的是将所有被 <code>store</code> dominate 的 <code>load</code> 替换成 <code>store</code> 的参数，如果存在没有被 dominate 的走通用流程（这一点通常应该对应于未初始化的局部变量，不过至少在 C11 中，这种行为不是 UB，仅仅会导致读取出来的值是“indetermine”的，因此走通用流程是合理的）。函数的参数（类型为 <code>llvm::Argument</code>）和全局变量（类型为 <code>llvm::GlobalValue</code>）均属于“non-instructions”（也许这个变量的名字改成 <code>StoringNonInstValue</code> 更合适），其中函数参数确保在进入函数体之前就存在了，而且本身作为寄存器变量保证了不会被修改，因此“always dominated”，可以直接替换。不过全局变量其实涉及到一个很小的点。我们来看如下的代码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">void foo() {
   static int baz = 42;
   int *p, *q = p;
   printf(&#34;%p %p\n&#34;, p, q);
   p = &amp;baz;
   q = p;
-}</code></pre></div></div><div class=paragraph><p>这段代码在我的机器上（amd64，clang，-O0/-O1/-O2/-O3/-Ofast）会输出两个相同的值，即 <code>baz</code> 的地址。优化后的结果是这样的：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=llvm>define void @foo() {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这段代码在我的机器上（amd64，clang，-O0/-O1/-O2/-O3/-Ofast）会输出两个相同的值，即 <code>baz</code> 的地址。优化后的结果是这样的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="llvm">define void @foo() {
 entry:
   ;                                                  vvvvvvvv      vvvvvvvv
   %call = call i32 (ptr, ...) @printf(ptr @.str, ptr @bar.baz, ptr @bar.baz)
   ret void
-}</code></pre></div></div><div class=paragraph><p>如果将最后两行注释掉，又会输出两个不同于 <code>baz</code> 的地址的值</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=llvm>define void @foo() {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>如果将最后两行注释掉，又会输出两个不同于 <code>baz</code> 的地址的值</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="llvm">define void @foo() {
 entry:
   ;                                                  vvvvv      vvvvv
   %call = call i32 (ptr, ...) @printf(ptr @.str, ptr undef, ptr undef)
   ret void
-}</code></pre></div></div><div class=paragraph><p>直接原因是，当 store 的内容是全局变量时 <code>StoringGlobalVal</code> 为 true，执行流跳过了 <code>if</code> 分支，直接将出现在<strong>后面</strong>的 <code>store</code> 的值替换到出现在<strong>前面</strong>的 <code>load</code>。不过，使用未初始化的局部变量是 UB<a href=#bib:c11-annex-j.2>[5]</a>，所以其实影响不大（我在 LLVM 社区提了一个<a href=https://discourse.llvm.org/t/question-about-mem2regs-handling-of-global-variables/69279>问题</a>，忽略我的英语）。</p></div></div><div class=sect2><h3 id=_promotesingleblockalloca>4.4. promoteSingleBlockAlloca</h3><div class=paragraph><p>有一个比较特殊的点——当发现一个 load 之前没有任何 store 时，直觉上将 load 的 uses 替换为 undef 就好（因为当前情况是所有的 load 和 store 都在同一个 BB 中），但是 LLVM 进行了分情况考虑：</p></div><div class=ulist><ul><li><p>如果没有任何 store，将 load 替换为 undef</p></li><li><p>否则，返回 false 用通用逻辑</p></li></ul></div><div class="admonitionblock tip"><table><tbody><tr><td class=icon><i class="fa icon-tip" title=Tip></i></td><td class=content>这里 <code>llvm::lower_bound</code> 返回的是紧跟着 load 的 store 的索引，因此如果 <code>it == begin()</code>，因为这 load 之前没有 store</td></tr></tbody></table></div><div class=paragraph><p>关键在于，这里考虑的<strong>仅仅</strong>是 load 和 store，但是还有 alloca！mem2reg 只考虑 entry 中的 alloca，也就是说 alloca 一定 dominate 所有的 store 和 load。考虑如下的 BB：</p></div><div class=imageblock><div class=content><img src=images/only-in-one-bb.png alt="only in one bb"></div></div><div class=paragraph><p>这里 <code>%gotcha</code> 虽然一开始是 undef，但是后面会被修改。</p></div><div class=sidebarblock><div class=content><div class=title>等价 C 代码</div><div class=paragraph><p>如下代码会产生上述行为：</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c>int gotcha;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>直接原因是，当 store 的内容是全局变量时 <code>StoringGlobalVal</code> 为 true，执行流跳过了 <code>if</code> 分支，直接将出现在<strong>后面</strong>的 <code>store</code> 的值替换到出现在<strong>前面</strong>的 <code>load</code>。不过，使用未初始化的局部变量是 UB<a href="#bib:c11-annex-j.2">[5]</a>，所以其实影响不大（我在 LLVM 社区提了一个<a href="https://discourse.llvm.org/t/question-about-mem2regs-handling-of-global-variables/69279">问题</a>，忽略我的英语）。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_promotesingleblockalloca">4.4. promoteSingleBlockAlloca</h3>
+<div class="paragraph">
+<p>有一个比较特殊的点——当发现一个 load 之前没有任何 store 时，直觉上将 load 的 uses 替换为 undef 就好（因为当前情况是所有的 load 和 store 都在同一个 BB 中），但是 LLVM 进行了分情况考虑：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>如果没有任何 store，将 load 替换为 undef</p>
+</li>
+<li>
+<p>否则，返回 false 用通用逻辑</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tbody><tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+这里 <code>llvm::lower_bound</code> 返回的是紧跟着 load 的 store 的索引，因此如果 <code>it == begin()</code>，因为这 load 之前没有 store
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class="paragraph">
+<p>关键在于，这里考虑的<strong>仅仅</strong>是 load 和 store，但是还有 alloca！mem2reg 只考虑 entry 中的 alloca，也就是说 alloca 一定 dominate 所有的 store 和 load。考虑如下的 BB：</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/only-in-one-bb.png" alt="only in one bb"/>
+</div>
+</div>
+<div class="paragraph">
+<p>这里 <code>%gotcha</code> 虽然一开始是 undef，但是后面会被修改。</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">等价 C 代码</div>
+<div class="paragraph">
+<p>如下代码会产生上述行为：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c">int gotcha;
 for (int i = 0; i &lt; 10; i++) {
   int t = gotcha;
   t++;
   gotcha = t;
-}</code></pre></div></div></div></div></div><div class=sect2><h3 id=_promotemem2regcomputeliveinblocks>4.5. PromoteMem2Reg::ComputeLiveInBlocks</h3><div class=paragraph><p>进行 liveness 分析<a href=#bib:liveness-analysis>[7]</a>，这主要是为了消除无用的 φ-node，也就是说，最终 mem2reg 的结果是 pruned 形式。</p></div><div class=paragraph><p>分析的流程也比较直观：</p></div><div class="olist arabic"><ol class=arabic><li><p>从 uses 开始，先将没有 live-in 的 block 剔除，这里的逻辑有一点绕</p><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>for (BasicBlock::iterator I = BB-&gt;begin();; ++I) {
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_promotemem2regcomputeliveinblocks">4.5. PromoteMem2Reg::ComputeLiveInBlocks</h3>
+<div class="paragraph">
+<p>进行 liveness 分析<a href="#bib:liveness-analysis">[7]</a>，这主要是为了消除无用的 φ-node，也就是说，最终 mem2reg 的结果是 pruned 形式。</p>
+</div>
+<div class="paragraph">
+<p>分析的流程也比较直观：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>从 uses 开始，先将没有 live-in 的 block 剔除，这里的逻辑有一点绕</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">for (BasicBlock::iterator I = BB-&gt;begin();; ++I) {
   if (StoreInst *SI = dyn_cast&lt;StoreInst&gt;(I)) {
     if (SI-&gt;getOperand(1) != AI)
       continue;
@@ -329,9 +1060,45 @@ for (int i = 0; i &lt; 10; i++) {
   if (LoadInst *LI = dyn_cast&lt;LoadInst&gt;(I))
     if (LI-&gt;getOperand(0) == AI)
       break;
-}</code></pre></div></div><div class=paragraph><p>进入这个循环时能够确定的是，<code>BB</code> 包含 <code>AI</code> 的 def 和 use，为了确定是否 live-in，我们需要确定 def 和 use 出现的先后顺序——如果先出现的是 def，那么没有 live-in，需要将 BB 从 work list 中删除；如果先出现的是 use，那么 live-in，保留。为了实现这个逻辑，这里使用了两个并列的、可能跳出循环的 <code>if</code>，找到的是第一个使用 <code>AI</code> 的 load 或者 store。如果找到的是 store，那么说明没有 live-in，否则，说明 live-in。</p></div></li><li><p>然后就是经典的 backward data-flow analysis</p></li></ol></div><div class=paragraph><p>结束 liveness 分析，就可以开始进行插入 φ-node 和 rename 的工作了。插入 φ-node 比较简单，因为已经有了 IDF。</p></div><div class=paragraph><p>为什么要对 PHIBlocks 进行排序？目前能想到的唯一理由就是让 <code>Version</code> 增加的顺序跟 BB 的顺序一致。</p></div></div><div class=sect2><h3 id=_renamepass>4.6. RenamePass</h3><div class=paragraph><p>手动将递归转换为了迭代，见 commit 记录：</p></div><div class=quoteblock><blockquote><div class=paragraph><p>Change the rename pass to be "tail recursive", only adding N-1 successors
-to the worklist, and handling the last one with a 'tail call'. This speeds
-up PR1432 from 2.0578s to 2.0012s (2.8%)</p></div></blockquote><div class=attribution>— Chris Lattner</div></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>NextIteration:
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>进入这个循环时能够确定的是，<code>BB</code> 包含 <code>AI</code> 的 def 和 use，为了确定是否 live-in，我们需要确定 def 和 use 出现的先后顺序——如果先出现的是 def，那么没有 live-in，需要将 BB 从 work list 中删除；如果先出现的是 use，那么 live-in，保留。为了实现这个逻辑，这里使用了两个并列的、可能跳出循环的 <code>if</code>，找到的是第一个使用 <code>AI</code> 的 load 或者 store。如果找到的是 store，那么说明没有 live-in，否则，说明 live-in。</p>
+</div>
+</li>
+<li>
+<p>然后就是经典的 backward data-flow analysis</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>结束 liveness 分析，就可以开始进行插入 φ-node 和 rename 的工作了。插入 φ-node 比较简单，因为已经有了 IDF。</p>
+</div>
+<div class="paragraph">
+<p>为什么要对 PHIBlocks 进行排序？目前能想到的唯一理由就是让 <code>Version</code> 增加的顺序跟 BB 的顺序一致。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_renamepass">4.6. RenamePass</h3>
+<div class="paragraph">
+<p>手动将递归转换为了迭代，见 commit 记录：</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Change the rename pass to be &#34;tail recursive&#34;, only adding N-1 successors
+to the worklist, and handling the last one with a &#39;tail call&#39;. This speeds
+up PR1432 from 2.0578s to 2.0012s (2.8%)</p>
+</div>
+</blockquote>
+<div class="attribution">
+— Chris Lattner
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">NextIteration:
   // 当前 BB 是否有 phi-node? 注意, 我们假设 BB 中所有的 phi-node 一定出现
   // 在开头的部分
   if (PHINode *APN = dyn_cast&lt;PHINode&gt;(BB-&gt;begin())) {
@@ -346,15 +1113,177 @@ up PR1432 from 2.0578s to 2.0012s (2.8%)</p></div></blockquote><div class=attrib
       // 所以控制流根本不会走到这里, 因此不会崩溃.
       unsigned NumEdge = llvm::count(successors(Pred), BB);
     }
-  }</code></pre></div></div><div class=paragraph><p>接下来就是给 φ-node 添加入边，流程很直观：首先获取 φ-node 的迭代器（也就是 Instruction 的迭代器，调用 <code>BB.begin</code> 即可），然后给遇到的每一个 φ-node 调用 <code>addIncoming</code> 添加入边，同时还要记得由于 φ-node 本身就是变量的 def，要用它更新变量当前的值。</p></div><div class=paragraph><p>不过，这里有一个需要注意的问题：我们并没有记录 mem2reg 在当前 BB 添加了多少 φ-node，因此需要其他的方式确定何时停止。LLVM 解决的方式基于一个前提，即，新添加的（没有调用过 <code>addIncoming</code> 的）φ-node 的 <code>getNumOperands</code> 的结果都是一样的，一旦遇见一个不一样的，说明就不是 mem2reg 添加的，就可以终止。</p></div><div class=listingblock><div class=content><pre class="rouge highlight"><code data-lang=c++>do {
+  }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>接下来就是给 φ-node 添加入边，流程很直观：首先获取 φ-node 的迭代器（也就是 Instruction 的迭代器，调用 <code>BB.begin</code> 即可），然后给遇到的每一个 φ-node 调用 <code>addIncoming</code> 添加入边，同时还要记得由于 φ-node 本身就是变量的 def，要用它更新变量当前的值。</p>
+</div>
+<div class="paragraph">
+<p>不过，这里有一个需要注意的问题：我们并没有记录 mem2reg 在当前 BB 添加了多少 φ-node，因此需要其他的方式确定何时停止。LLVM 解决的方式基于一个前提，即，新添加的（没有调用过 <code>addIncoming</code> 的）φ-node 的 <code>getNumOperands</code> 的结果都是一样的，一旦遇见一个不一样的，说明就不是 mem2reg 添加的，就可以终止。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c++">do {
   ++PNI;
   APN = dyn_cast&lt;PHINode&gt;(PNI);
   if (!APN)
     break;
   // 这里的判断基于下一个待处理的 phi-node
-} while (APN-&gt;getNumOperands() == NewPHINumOperands);</code></pre></div></div><div class=paragraph><p>TODO: 正常情况下 pred 到 BB 为什么会有多条边
-TODO: 疑惑，直觉上来讲，新增的 φ-node 的 <code>getNumOperands</code> 应该就是 0，那么直接用 0 就好了，为啥还要进行一次调用？</p></div><div class=paragraph><p>处理完 φ-node 后，就是替换 load 和 store 的部分，这里很直观，跟我们自己实现的差不多，就不再赘述了。</p></div><div class=paragraph><p>最后是“递归”的部分。首先将 BB 和 Pred 都更新为第一个 succ，然后将其他的后继 BB 都添加到 work list 中（这一步要跟外面的 while 循环配合才能完成使命），最后，跳回 <code>RenamePass</code> 的开始。本质上完成了一个先序 DFS 遍历。</p></div><div class=sidebarblock><div class=content><div class=title>递归转迭代</div><div class=paragraph><p>我们只讨论直接递归（关于直接递归和间接递归，参见 <a href=https://www.baeldung.com/cs/recursion-direct-vs-indirect>Recursion: Direct vs Indirect</a>）。首先明确一点，递归的轨迹是一棵树（自然，可以退化成线性序列），这样我们讨论的问题就变成了如何将递归的树遍历算法转换为迭代形式。通常，遍历一棵树有三种形式：先序遍历、后序遍历和中序遍历，其中中序遍历是针对二叉树的特殊情况。</p></div><div class=paragraph><p>先来看先序遍历。LLVM 已经为我们做出了示范：</p></div><div class=ulist><ul><li><p>将参数打包，保存在一个数据结构中</p></li><li><p>无限循环，通过 break 或者 return 结束</p></li><li><p>在循环的末尾设置好下一次“递归”的“参数”，将其他的部分保存起来</p></li></ul></div><div class=paragraph><p>至于中序和后序，我也暂时没弄明白，尬笑……</p></div></div></div></div></div></div><div class=sect1><h2 id=_总结>5. 总结</h2><div class=sectionbody><div class=paragraph><p>本文首先介绍了引入 mem2reg 的<a href=#sec:background>背景</a>，然后展示了若干简单的<a href=#sec:experiment>实验</a>加深对 mem2reg 功能的理解，接下来讲解了<a href=#sec:writing-mem2reg>如何实现自己的 mem2reg</a>，最后，本文详细地讲解了 <a href=#sec:reading-llvm-mem2reg>LLVM 的实现</a>。</p></div><div class=paragraph><p>总体而言，mem2reg 是 LLVM 中一个比较简单的 pass，不过通过学习这个 pass，我们了解了不少思想、相关的实现技术和需要注意的细节。</p></div></div></div><div class=sect1><h2 id=_参考>参考</h2><div class=sectionbody><div class="ulist bibliography"><ul class=bibliography><li><p><a id=bib:opt-no-effect></a>[1] <a href=https://stackoverflow.com/questions/46513801/llvm-opt-mem2reg-has-no-effect>LLVM opt mem2reg has no effect</a></p></li><li><p><a id=bib:writing-an-llvm-pass-new-pm></a>[2] <a href=https://llvm.org/docs/WritingAnLLVMNewPMPass.html>Writing an LLVM Pass (with the new pass manager)</a></p></li><li><p><a id=bib:llvm-progman></a>[3] <a href=https://llvm.org/docs/ProgrammersManual.html:>LLVM Programmer’s Manual</a></p></li><li><p><a id=bib:llvm-langref></a>[4] <a href=https://llvm.org/docs/LangRef.html>LLVM Language Reference</a></p></li><li><p><a id=bib:c11-annex-j.2></a>[5] <a href=http://port70.net/~nsz/c/c11/n1570.html#J.2>J.2 Undefined behavior</a></p></li><li><p><a id=bib:llvm-langref-volatile></a>[6] <a href=https://llvm.org/docs/LangRef.html#volatile-memory-accesses>Volatile Memory Accesses</a></p></li><li><p><a id=bib:liveness-analysis></a>[7] <a href=https://en.wikipedia.org/wiki/Live-variable_analysis>Live-variable analysis - Wikipedia</a></p></li></ul></div></div></div></div><footer></footer></article></section></div><footer class=footer><section class=container>©
-2023
-rhanqtl
-·
-技术支持 <a href=https://gohugo.io/>Hugo</a> & <a href=https://github.com/luizdepra/hugo-coder/>Coder</a>.</section></footer></main><script src=/js/coder.min.6ae284be93d2d19dad1f02b0039508d9aab3180a12a06dcc71b0b0ef7825a317.js integrity="sha256-auKEvpPS0Z2tHwKwA5UI2aqzGAoSoG3McbCw73gloxc="></script></body></html>
+} while (APN-&gt;getNumOperands() == NewPHINumOperands);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>TODO: 正常情况下 pred 到 BB 为什么会有多条边
+TODO: 疑惑，直觉上来讲，新增的 φ-node 的 <code>getNumOperands</code> 应该就是 0，那么直接用 0 就好了，为啥还要进行一次调用？</p>
+</div>
+<div class="paragraph">
+<p>处理完 φ-node 后，就是替换 load 和 store 的部分，这里很直观，跟我们自己实现的差不多，就不再赘述了。</p>
+</div>
+<div class="paragraph">
+<p>最后是“递归”的部分。首先将 BB 和 Pred 都更新为第一个 succ，然后将其他的后继 BB 都添加到 work list 中（这一步要跟外面的 while 循环配合才能完成使命），最后，跳回 <code>RenamePass</code> 的开始。本质上完成了一个先序 DFS 遍历。</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">递归转迭代</div>
+<div class="paragraph">
+<p>我们只讨论直接递归（关于直接递归和间接递归，参见 <a href="https://www.baeldung.com/cs/recursion-direct-vs-indirect">Recursion: Direct vs Indirect</a>）。首先明确一点，递归的轨迹是一棵树（自然，可以退化成线性序列），这样我们讨论的问题就变成了如何将递归的树遍历算法转换为迭代形式。通常，遍历一棵树有三种形式：先序遍历、后序遍历和中序遍历，其中中序遍历是针对二叉树的特殊情况。</p>
+</div>
+<div class="paragraph">
+<p>先来看先序遍历。LLVM 已经为我们做出了示范：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>将参数打包，保存在一个数据结构中</p>
+</li>
+<li>
+<p>无限循环，通过 break 或者 return 结束</p>
+</li>
+<li>
+<p>在循环的末尾设置好下一次“递归”的“参数”，将其他的部分保存起来</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>至于中序和后序，我也暂时没弄明白，尬笑……</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_总结">5. 总结</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>本文首先介绍了引入 mem2reg 的<a href="#sec:background">背景</a>，然后展示了若干简单的<a href="#sec:experiment">实验</a>加深对 mem2reg 功能的理解，接下来讲解了<a href="#sec:writing-mem2reg">如何实现自己的 mem2reg</a>，最后，本文详细地讲解了 <a href="#sec:reading-llvm-mem2reg">LLVM 的实现</a>。</p>
+</div>
+<div class="paragraph">
+<p>总体而言，mem2reg 是 LLVM 中一个比较简单的 pass，不过通过学习这个 pass，我们了解了不少思想、相关的实现技术和需要注意的细节。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_参考">参考</h2>
+<div class="sectionbody">
+<div class="ulist bibliography">
+<ul class="bibliography">
+<li>
+<p><a id="bib:opt-no-effect"></a>[1] <a href="https://stackoverflow.com/questions/46513801/llvm-opt-mem2reg-has-no-effect">LLVM opt mem2reg has no effect</a></p>
+</li>
+<li>
+<p><a id="bib:writing-an-llvm-pass-new-pm"></a>[2] <a href="https://llvm.org/docs/WritingAnLLVMNewPMPass.html">Writing an LLVM Pass (with the new pass manager)</a></p>
+</li>
+<li>
+<p><a id="bib:llvm-progman"></a>[3] <a href="https://llvm.org/docs/ProgrammersManual.html:">LLVM Programmer’s Manual</a></p>
+</li>
+<li>
+<p><a id="bib:llvm-langref"></a>[4] <a href="https://llvm.org/docs/LangRef.html">LLVM Language Reference</a></p>
+</li>
+<li>
+<p><a id="bib:c11-annex-j.2"></a>[5] <a href="http://port70.net/~nsz/c/c11/n1570.html#J.2">J.2 Undefined behavior</a></p>
+</li>
+<li>
+<p><a id="bib:llvm-langref-volatile"></a>[6] <a href="https://llvm.org/docs/LangRef.html#volatile-memory-accesses">Volatile Memory Accesses</a></p>
+</li>
+<li>
+<p><a id="bib:liveness-analysis"></a>[7] <a href="https://en.wikipedia.org/wiki/Live-variable_analysis">Live-variable analysis - Wikipedia</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+      </div>
+
+
+      <footer>
+        
+
+
+        
+        
+        
+        
+      </footer>
+    </article>
+
+    
+  </section>
+
+    </div>
+
+    <footer class="footer">
+  <section class="container">
+    ©
+    
+    2023
+     rhanqtl 
+    ·
+    
+    技术支持 <a href="https://gohugo.io/">Hugo</a> & <a href="https://github.com/luizdepra/hugo-coder/">Coder</a>.
+    
+  </section>
+</footer>
+
+  </main>
+
+  
+
+  
+  
+  <script src="/js/coder.min.6ae284be93d2d19dad1f02b0039508d9aab3180a12a06dcc71b0b0ef7825a317.js" integrity="sha256-auKEvpPS0Z2tHwKwA5UI2aqzGAoSoG3McbCw73gloxc="></script>
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</body>
+
+</html>

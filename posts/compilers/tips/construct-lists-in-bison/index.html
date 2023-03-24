@@ -1,52 +1,519 @@
-<!doctype html><html lang=zh-cn><head><title>在 Bison 中如何构造列表 · rhanqtl</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=color-scheme content="light dark"><meta name=author content="rhanqtl"><meta name=description content="本文介绍在 Bison 中如何生成列表"><meta name=keywords content="blog,developer,personal,博客,开发者,个人网站"><meta name=twitter:card content="summary"><meta name=twitter:title content="在 Bison 中如何构造列表"><meta name=twitter:description content="本文介绍在 Bison 中如何生成列表"><meta property="og:title" content="在 Bison 中如何构造列表"><meta property="og:description" content="本文介绍在 Bison 中如何生成列表"><meta property="og:type" content="article"><meta property="og:url" content="https://rhanqtl.github.io/posts/compilers/tips/construct-lists-in-bison/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2023-02-11T21:02:57+08:00"><meta property="article:modified_time" content="2023-02-11T21:02:57+08:00"><link rel=canonical href=https://rhanqtl.github.io/posts/compilers/tips/construct-lists-in-bison/><link rel=preload href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as=font type=font/woff2 crossorigin><link rel=stylesheet href=/css/coder.min.0669b62fc2c181a12a4ba10be9984e385c9a5e83dc7cb7ae3759ad0b98d7e8b2.css integrity="sha256-Bmm2L8LBgaEqS6EL6ZhOOFyaXoPcfLeuN1mtC5jX6LI=" crossorigin=anonymous media=screen><link rel=stylesheet href=/css/molokai.min.5a772179137f76a20e9f3b85125ac4d4b2ba9e877e72fc48b5434a0a88eca640.css integrity="sha256-WncheRN/dqIOnzuFElrE1LK6nod+cvxItUNKCojspkA=" crossorigin=anonymous media=screen><link rel=stylesheet href=/css/custom.min.79e5c878b74c6420a9af1e46d76fc5c90af4569034eea66cef6d2358f4111a6d.css integrity="sha256-eeXIeLdMZCCprx5G12/FyQr0VpA07qZs720jWPQRGm0=" crossorigin=anonymous media=screen><link rel=icon type=image/png href=/images/favicon-32x32.png sizes=32x32><link rel=icon type=image/png href=/images/favicon-16x16.png sizes=16x16><link rel=apple-touch-icon href=/images/apple-touch-icon.png><link rel=apple-touch-icon sizes=180x180 href=/images/apple-touch-icon.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/images/safari-pinned-tab.svg color=#5bbad5><meta name=generator content="Hugo 0.111.3"></head><body class="preload-transitions colorscheme-light"><div class=float-container><a id=dark-mode-toggle class=colorscheme-toggle><i class="fa fa-adjust fa-fw" aria-hidden=true></i></a></div><main class=wrapper><nav class=navigation><section class=container><a class=navigation-title href=/>rhanqtl</a>
-<input type=checkbox id=menu-toggle>
-<label class="menu-button float-right" for=menu-toggle><i class="fa fa-bars fa-fw" aria-hidden=true></i></label><ul class=navigation-list><li class=navigation-item><a class=navigation-link href=/posts/>原创博文</a></li><li class=navigation-item><a class=navigation-link href=/translations/>翻译</a></li><li class=navigation-item><a class=navigation-link href=/poems/>喜欢的诗歌</a></li><li class=navigation-item><a class=navigation-link href=/projects/>作品</a></li><li class=navigation-item><a class=navigation-link href=/about/>关于我</a></li></ul></section></nav><div class=content><section class="container post"><article><header><div class=post-title><h1 class=title><a class=title-link href=https://rhanqtl.github.io/posts/compilers/tips/construct-lists-in-bison/>在 Bison 中如何构造列表</a></h1></div><div class=post-meta><div class=date><span class=posted-on><i class="fa fa-calendar" aria-hidden=true></i>
-<time datetime=2023-02-11T21:02:57+08:00>February 11, 2023</time></span>
-<span class=reading-time><i class="fa fa-clock-o" aria-hidden=true></i>
-阅读时间：2 分钟</span></div><div class=tags><i class="fa fa-tag" aria-hidden=true></i>
-<span class=tag><a href=/tags/%E7%BC%96%E8%AF%91%E5%99%A8/>编译器</a></span>
-<span class=separator>•</span>
-<span class=tag><a href=/tags/bison/>Bison</a></span></div></div></header><div class=post-content><h1 id=前言>前言
-<a class=heading-link href=#%e5%89%8d%e8%a8%80><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h1><p>生成 AST 时免不了处理列表（例如，函数调用的参数）：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c++ data-lang=c++><span style=display:flex><span><span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>Expr</span> {};
-</span></span><span style=display:flex><span><span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>CallExpr</span> <span style=color:#f92672>:</span> <span style=color:#66d9ef>public</span> Expr {
-</span></span><span style=display:flex><span>  std<span style=color:#f92672>::</span>shared_ptr<span style=color:#f92672>&lt;</span>Expr<span style=color:#f92672>&gt;</span> fn;
-</span></span><span style=display:flex><span>  std<span style=color:#f92672>::</span>vector<span style=color:#f92672>&lt;</span>std<span style=color:#f92672>::</span>shared_ptr<span style=color:#f92672>&lt;</span>Expr<span style=color:#f92672>&gt;&gt;</span> args;
-</span></span><span style=display:flex><span>};
-</span></span></code></pre></div><p>如果是手写 parser，可以这样：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-text data-lang=text><span style=display:flex><span>// assume that &#39;(&#39; is consumed
-</span></span><span style=display:flex><span>until current token is &#39;)&#39;
-</span></span><span style=display:flex><span>    expr ← parse an expression
-</span></span><span style=display:flex><span>    if lookahead token is not &#39;)&#39;
-</span></span><span style=display:flex><span>        consume a &#39;,&#39;
-</span></span><span style=display:flex><span>    end
-</span></span><span style=display:flex><span>end
-</span></span></code></pre></div><p>但是 Bison 并没有直接提供对列表表示的支持（例如，<code>*</code> 和 <code>+</code> 符号<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup>），只能使用递归（有点像命令式语言跟函数式语言，不是吗？），本文介绍如何实现。</p><h1 id=依靠递归创建列表>依靠递归创建列表
-<a class=heading-link href=#%e4%be%9d%e9%9d%a0%e9%80%92%e5%bd%92%e5%88%9b%e5%bb%ba%e5%88%97%e8%a1%a8><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h1><p>Bison 支持两种递归：左递归和右递归，两种方式都可以创建列表，但是顺序不同、需要的内存也不同。</p><p>我们以列表字面量为例：</p><ol><li>一个列表字面量以一个 <code>[</code> 开始、中间是以 <code>,</code> 分隔的任意数量的表达式，最后以 <code>]</code> 结尾；</li><li>表达式可以是浮点数，也可以是列表字面量</li></ol><h2 id=左递归>左递归
-<a class=heading-link href=#%e5%b7%a6%e9%80%92%e5%bd%92><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h2><p>文法（省略语义动作）：</p><pre tabindex=0><code class=language-bison data-lang=bison>line: &#34;\n&#34;
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+  <title>
+  在 Bison 中如何构造列表 · rhanqtl
+</title>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+
+
+
+
+<meta name="author" content="rhanqtl">
+<meta name="description" content="本文介绍在 Bison 中如何生成列表">
+<meta name="keywords" content="blog,developer,personal,博客,开发者,个人网站">
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="在 Bison 中如何构造列表"/>
+<meta name="twitter:description" content="本文介绍在 Bison 中如何生成列表"/>
+
+<meta property="og:title" content="在 Bison 中如何构造列表" />
+<meta property="og:description" content="本文介绍在 Bison 中如何生成列表" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://rhanqtl.github.io/posts/compilers/tips/construct-lists-in-bison/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-02-11T21:02:57+08:00" />
+<meta property="article:modified_time" content="2023-02-11T21:02:57+08:00" />
+
+
+
+
+<link rel="canonical" href="https://rhanqtl.github.io/posts/compilers/tips/construct-lists-in-bison/">
+
+
+<link rel="preload" href="/fonts/forkawesome-webfont.woff2?v=1.2.0" as="font" type="font/woff2" crossorigin>
+
+
+  
+  
+  <link rel="stylesheet" href="/css/coder.min.0669b62fc2c181a12a4ba10be9984e385c9a5e83dc7cb7ae3759ad0b98d7e8b2.css" integrity="sha256-Bmm2L8LBgaEqS6EL6ZhOOFyaXoPcfLeuN1mtC5jX6LI=" crossorigin="anonymous" media="screen" />
+
+
+
+
+
+
+
+
+ 
+  
+    
+    <link rel="stylesheet" href="/css/molokai.min.5a772179137f76a20e9f3b85125ac4d4b2ba9e877e72fc48b5434a0a88eca640.css" integrity="sha256-WncheRN/dqIOnzuFElrE1LK6nod&#43;cvxItUNKCojspkA=" crossorigin="anonymous" media="screen" />
+  
+
+  
+    
+    <link rel="stylesheet" href="/css/custom.min.79e5c878b74c6420a9af1e46d76fc5c90af4569034eea66cef6d2358f4111a6d.css" integrity="sha256-eeXIeLdMZCCprx5G12/FyQr0VpA07qZs720jWPQRGm0=" crossorigin="anonymous" media="screen" />
+  
+
+
+
+
+
+<link rel="icon" type="image/png" href="/images/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/images/favicon-16x16.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+
+<meta name="generator" content="Hugo 0.111.3">
+
+
+
+
+
+</head>
+
+
+
+
+<body class="preload-transitions colorscheme-light">
+  
+<div class="float-container">
+    <a id="dark-mode-toggle" class="colorscheme-toggle">
+        <i class="fa fa-adjust fa-fw" aria-hidden="true"></i>
+    </a>
+</div>
+
+
+  <main class="wrapper">
+    <nav class="navigation">
+  <section class="container">
+    <a class="navigation-title" href="/">
+      rhanqtl
+    </a>
+    
+      <input type="checkbox" id="menu-toggle" />
+      <label class="menu-button float-right" for="menu-toggle">
+        <i class="fa fa-bars fa-fw" aria-hidden="true"></i>
+      </label>
+      <ul class="navigation-list">
+        
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/posts/">原创博文</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/translations/">翻译</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/poems/">喜欢的诗歌</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/projects/">作品</a>
+            </li>
+          
+            <li class="navigation-item">
+              <a class="navigation-link" href="/about/">关于我</a>
+            </li>
+          
+        
+        
+      </ul>
+    
+  </section>
+</nav>
+
+
+    <div class="content">
+      
+  <section class="container post">
+    <article>
+      <header>
+        <div class="post-title">
+          <h1 class="title">
+            <a class="title-link" href="https://rhanqtl.github.io/posts/compilers/tips/construct-lists-in-bison/">
+              在 Bison 中如何构造列表
+            </a>
+          </h1>
+        </div>
+        <div class="post-meta">
+          <div class="date">
+            <span class="posted-on">
+              <i class="fa fa-calendar" aria-hidden="true"></i>
+              <time datetime="2023-02-11T21:02:57&#43;08:00">
+                February 11, 2023
+              </time>
+            </span>
+            <span class="reading-time">
+              <i class="fa fa-clock-o" aria-hidden="true"></i>
+              阅读时间：2 分钟
+            </span>
+          </div>
+          
+          
+          <div class="tags">
+  <i class="fa fa-tag" aria-hidden="true"></i>
+    <span class="tag">
+      <a href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/">编译器</a>
+    </span>
+      <span class="separator">•</span>
+    <span class="tag">
+      <a href="/tags/bison/">Bison</a>
+    </span></div>
+
+        </div>
+      </header>
+
+      <div class="post-content">
+        
+        <h1 id="前言">
+  前言
+  <a class="heading-link" href="#%e5%89%8d%e8%a8%80">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h1>
+<p>生成 AST 时免不了处理列表（例如，函数调用的参数）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Expr</span> {};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CallExpr</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Expr {
+</span></span><span style="display:flex;"><span>  std<span style="color:#f92672">::</span>shared_ptr<span style="color:#f92672">&lt;</span>Expr<span style="color:#f92672">&gt;</span> fn;
+</span></span><span style="display:flex;"><span>  std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>std<span style="color:#f92672">::</span>shared_ptr<span style="color:#f92672">&lt;</span>Expr<span style="color:#f92672">&gt;&gt;</span> args;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>如果是手写 parser，可以这样：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>// assume that &#39;(&#39; is consumed
+</span></span><span style="display:flex;"><span>until current token is &#39;)&#39;
+</span></span><span style="display:flex;"><span>    expr ← parse an expression
+</span></span><span style="display:flex;"><span>    if lookahead token is not &#39;)&#39;
+</span></span><span style="display:flex;"><span>        consume a &#39;,&#39;
+</span></span><span style="display:flex;"><span>    end
+</span></span><span style="display:flex;"><span>end
+</span></span></code></pre></div><p>但是 Bison 并没有直接提供对列表表示的支持（例如，<code>*</code> 和 <code>+</code> 符号<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>），只能使用递归（有点像命令式语言跟函数式语言，不是吗？），本文介绍如何实现。</p>
+<h1 id="依靠递归创建列表">
+  依靠递归创建列表
+  <a class="heading-link" href="#%e4%be%9d%e9%9d%a0%e9%80%92%e5%bd%92%e5%88%9b%e5%bb%ba%e5%88%97%e8%a1%a8">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h1>
+<p>Bison 支持两种递归：左递归和右递归，两种方式都可以创建列表，但是顺序不同、需要的内存也不同。</p>
+<p>我们以列表字面量为例：</p>
+<ol>
+<li>一个列表字面量以一个 <code>[</code> 开始、中间是以 <code>,</code> 分隔的任意数量的表达式，最后以 <code>]</code> 结尾；</li>
+<li>表达式可以是浮点数，也可以是列表字面量</li>
+</ol>
+<h2 id="左递归">
+  左递归
+  <a class="heading-link" href="#%e5%b7%a6%e9%80%92%e5%bd%92">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h2>
+<p>文法（省略语义动作）：</p>
+<pre tabindex="0"><code class="language-bison" data-lang="bison">line: &#34;\n&#34;
     | list &#34;\n&#34; ;
 
 list: NUMBER
     | list &#34;,&#34; NUMBER
     ;
-</code></pre><p>处理过程大概是这样的：</p><table><thead><tr><th style=text-align:left>序号</th><th style=text-align:left>栈</th><th style=text-align:left>token 序列</th><th style=text-align:left>动作</th></tr></thead><tbody><tr><td style=text-align:left>0</td><td style=text-align:left>$start</td><td style=text-align:left>42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>-</td></tr><tr><td style=text-align:left>1</td><td style=text-align:left>$start 42</td><td style=text-align:left>&lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>2</td><td style=text-align:left>$start list</td><td style=text-align:left>&lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>reduce</td></tr><tr><td style=text-align:left>3</td><td style=text-align:left>$start list &lsquo;,&rsquo;</td><td style=text-align:left>3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>4</td><td style=text-align:left>$start list &lsquo;,&rsquo; 3.14</td><td style=text-align:left>&lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>5</td><td style=text-align:left>$start list</td><td style=text-align:left>&lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>reduce</td></tr><tr><td style=text-align:left>6</td><td style=text-align:left>$start list &lsquo;,&rsquo;</td><td style=text-align:left>2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>7</td><td style=text-align:left>$start list &lsquo;,&rsquo; 2.718</td><td style=text-align:left>&lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>8</td><td style=text-align:left>$start list &lsquo;\n&rsquo;</td><td style=text-align:left></td><td style=text-align:left>reduce</td></tr><tr><td style=text-align:left>9</td><td style=text-align:left>$start line</td><td style=text-align:left></td><td style=text-align:left>reduce</td></tr></tbody></table><p>可以看到：</p><ol><li>整个序列是<em>从前向后</em> 构造；</li><li>基本上类似于手写的、基于迭代的方式；</li><li>所需内存比较稳定。</li></ol><h2 id=右递归>右递归
-<a class=heading-link href=#%e5%8f%b3%e9%80%92%e5%bd%92><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h2><p>文法（省略动作）：</p><pre tabindex=0><code class=language-bison data-lang=bison>line: &#34;\n&#34;
+</code></pre><p>处理过程大概是这样的：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">序号</th>
+<th style="text-align:left">栈</th>
+<th style="text-align:left">token 序列</th>
+<th style="text-align:left">动作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">0</td>
+<td style="text-align:left">$start</td>
+<td style="text-align:left">42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">-</td>
+</tr>
+<tr>
+<td style="text-align:left">1</td>
+<td style="text-align:left">$start 42</td>
+<td style="text-align:left">&lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">2</td>
+<td style="text-align:left">$start list</td>
+<td style="text-align:left">&lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">reduce</td>
+</tr>
+<tr>
+<td style="text-align:left">3</td>
+<td style="text-align:left">$start list &lsquo;,&rsquo;</td>
+<td style="text-align:left">3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">4</td>
+<td style="text-align:left">$start list &lsquo;,&rsquo; 3.14</td>
+<td style="text-align:left">&lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">5</td>
+<td style="text-align:left">$start list</td>
+<td style="text-align:left">&lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">reduce</td>
+</tr>
+<tr>
+<td style="text-align:left">6</td>
+<td style="text-align:left">$start list &lsquo;,&rsquo;</td>
+<td style="text-align:left">2.718  &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">7</td>
+<td style="text-align:left">$start list &lsquo;,&rsquo; 2.718</td>
+<td style="text-align:left">&lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">8</td>
+<td style="text-align:left">$start list &lsquo;\n&rsquo;</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">reduce</td>
+</tr>
+<tr>
+<td style="text-align:left">9</td>
+<td style="text-align:left">$start line</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">reduce</td>
+</tr>
+</tbody>
+</table>
+<p>可以看到：</p>
+<ol>
+<li>整个序列是<em>从前向后</em> 构造；</li>
+<li>基本上类似于手写的、基于迭代的方式；</li>
+<li>所需内存比较稳定。</li>
+</ol>
+<h2 id="右递归">
+  右递归
+  <a class="heading-link" href="#%e5%8f%b3%e9%80%92%e5%bd%92">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h2>
+<p>文法（省略动作）：</p>
+<pre tabindex="0"><code class="language-bison" data-lang="bison">line: &#34;\n&#34;
     | list &#34;\n&#34;
     ;
 
 list: NUMBER
     | NUMBER &#34;,&#34; list
     ;
-</code></pre><p>处理过程大概是这样的：</p><table><thead><tr><th style=text-align:left>序号</th><th style=text-align:left>栈</th><th style=text-align:left>token 序列</th><th style=text-align:left>动作</th></tr></thead><tbody><tr><td style=text-align:left>0</td><td style=text-align:left>$start</td><td style=text-align:left>42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>-</td></tr><tr><td style=text-align:left>1</td><td style=text-align:left>$start 42</td><td style=text-align:left>&lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>2</td><td style=text-align:left>$start 42 &lsquo;,&rsquo;</td><td style=text-align:left>3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>3</td><td style=text-align:left>$start 42 &lsquo;,&rsquo; 3.14</td><td style=text-align:left>&lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>4</td><td style=text-align:left>$start 42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo;</td><td style=text-align:left>2.718 &lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>5</td><td style=text-align:left>$start 42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718</td><td style=text-align:left>&lsquo;\n&rsquo;</td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>6</td><td style=text-align:left>$start 42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; list</td><td style=text-align:left>&lsquo;\n&rsquo;</td><td style=text-align:left>reduce</td></tr><tr><td style=text-align:left>7</td><td style=text-align:left>$start 42 &lsquo;,&rsquo; list</td><td style=text-align:left>&lsquo;\n&rsquo;</td><td style=text-align:left>reduce</td></tr><tr><td style=text-align:left>8</td><td style=text-align:left>$start list</td><td style=text-align:left>&lsquo;\n&rsquo;</td><td style=text-align:left>reduce</td></tr><tr><td style=text-align:left>9</td><td style=text-align:left>$start list &lsquo;\n&rsquo;</td><td style=text-align:left></td><td style=text-align:left>shift</td></tr><tr><td style=text-align:left>10</td><td style=text-align:left>$start line</td><td style=text-align:left></td><td style=text-align:left>reduce</td></tr></tbody></table><p>可以看到：</p><ol><li>整个序列是<em>从后向前</em> 构造；</li><li>所需内存与列表长度成正比。</li></ol><h2 id=小结>小结
-<a class=heading-link href=#%e5%b0%8f%e7%bb%93><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h2><p>如果是构造双向链表，两种方式都可以，不过应该更偏向于左递归，因为内存量少；如果构造列表（Java 的 ArrayList、Python 的 <code>list</code>），最好还是使用左递归；如果构造单向链表，可能右递归会容易处理一些（当然，也可以使用左递归 + 头插，最后翻转一下）。</p><blockquote><p>这有点像函数式语言中的 <code>foldl</code> 和 <code>foldr</code></p></blockquote><p>Bison 的手册建议总是使用左递归。</p><h1 id=结论>结论
-<a class=heading-link href=#%e7%bb%93%e8%ae%ba><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h1><p>本文介绍了如何在 Bison 中创建列表。</p><p>完整代码见 <a href=./code/leftrec.yy>leftrec.yy</a>、<a href=./code/rightrec.yy>rightrec.yy</a>、<a href=./code/list.hpp>list.hpp</a> 和 <a href=./code/Makefile>Makefile</a>.</p><h1 id=参考>参考
-<a class=heading-link href=#%e5%8f%82%e8%80%83><i class="fa fa-link" aria-hidden=true title=链接到标题></i>
-<span class=sr-only>链接到标题</span></a></h1><ol><li><a href=https://www.gnu.org/software/bison/manual/html_node/Recursion.html class=external-link target=_blank rel=noopener>3.3.3 Recursive Rules</a></li></ol><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p>ANTLR 中支持，所以可以如<a href=https://stackoverflow.com/a/759055 class=external-link target=_blank rel=noopener>这个答案</a>中这样实现&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></div><footer></footer></article></section></div><footer class=footer><section class=container>©
-2023
-rhanqtl
-·
-技术支持 <a href=https://gohugo.io/>Hugo</a> & <a href=https://github.com/luizdepra/hugo-coder/>Coder</a>.</section></footer></main><script src=/js/coder.min.6ae284be93d2d19dad1f02b0039508d9aab3180a12a06dcc71b0b0ef7825a317.js integrity="sha256-auKEvpPS0Z2tHwKwA5UI2aqzGAoSoG3McbCw73gloxc="></script></body></html>
+</code></pre><p>处理过程大概是这样的：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">序号</th>
+<th style="text-align:left">栈</th>
+<th style="text-align:left">token 序列</th>
+<th style="text-align:left">动作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">0</td>
+<td style="text-align:left">$start</td>
+<td style="text-align:left">42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">-</td>
+</tr>
+<tr>
+<td style="text-align:left">1</td>
+<td style="text-align:left">$start 42</td>
+<td style="text-align:left">&lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">2</td>
+<td style="text-align:left">$start 42 &lsquo;,&rsquo;</td>
+<td style="text-align:left">3.14 &lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">3</td>
+<td style="text-align:left">$start 42 &lsquo;,&rsquo; 3.14</td>
+<td style="text-align:left">&lsquo;,&rsquo; 2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">4</td>
+<td style="text-align:left">$start 42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo;</td>
+<td style="text-align:left">2.718 &lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">5</td>
+<td style="text-align:left">$start 42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; 2.718</td>
+<td style="text-align:left">&lsquo;\n&rsquo;</td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">6</td>
+<td style="text-align:left">$start 42 &lsquo;,&rsquo; 3.14 &lsquo;,&rsquo; list</td>
+<td style="text-align:left">&lsquo;\n&rsquo;</td>
+<td style="text-align:left">reduce</td>
+</tr>
+<tr>
+<td style="text-align:left">7</td>
+<td style="text-align:left">$start 42 &lsquo;,&rsquo; list</td>
+<td style="text-align:left">&lsquo;\n&rsquo;</td>
+<td style="text-align:left">reduce</td>
+</tr>
+<tr>
+<td style="text-align:left">8</td>
+<td style="text-align:left">$start list</td>
+<td style="text-align:left">&lsquo;\n&rsquo;</td>
+<td style="text-align:left">reduce</td>
+</tr>
+<tr>
+<td style="text-align:left">9</td>
+<td style="text-align:left">$start list &lsquo;\n&rsquo;</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">shift</td>
+</tr>
+<tr>
+<td style="text-align:left">10</td>
+<td style="text-align:left">$start line</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">reduce</td>
+</tr>
+</tbody>
+</table>
+<p>可以看到：</p>
+<ol>
+<li>整个序列是<em>从后向前</em> 构造；</li>
+<li>所需内存与列表长度成正比。</li>
+</ol>
+<h2 id="小结">
+  小结
+  <a class="heading-link" href="#%e5%b0%8f%e7%bb%93">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h2>
+<p>如果是构造双向链表，两种方式都可以，不过应该更偏向于左递归，因为内存量少；如果构造列表（Java 的 ArrayList、Python 的 <code>list</code>），最好还是使用左递归；如果构造单向链表，可能右递归会容易处理一些（当然，也可以使用左递归 + 头插，最后翻转一下）。</p>
+<blockquote>
+<p>这有点像函数式语言中的 <code>foldl</code> 和 <code>foldr</code></p>
+</blockquote>
+<p>Bison 的手册建议总是使用左递归。</p>
+<h1 id="结论">
+  结论
+  <a class="heading-link" href="#%e7%bb%93%e8%ae%ba">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h1>
+<p>本文介绍了如何在 Bison 中创建列表。</p>
+<p>完整代码见 <a href="./code/leftrec.yy" >leftrec.yy</a>、<a href="./code/rightrec.yy" >rightrec.yy</a>、<a href="./code/list.hpp" >list.hpp</a> 和 <a href="./code/Makefile" >Makefile</a>.</p>
+<h1 id="参考">
+  参考
+  <a class="heading-link" href="#%e5%8f%82%e8%80%83">
+    <i class="fa fa-link" aria-hidden="true" title="链接到标题"></i>
+    <span class="sr-only">链接到标题</span>
+  </a>
+</h1>
+<ol>
+<li><a href="https://www.gnu.org/software/bison/manual/html_node/Recursion.html"  class="external-link" target="_blank" rel="noopener">3.3.3 Recursive Rules</a></li>
+</ol>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>ANTLR 中支持，所以可以如<a href="https://stackoverflow.com/a/759055"  class="external-link" target="_blank" rel="noopener">这个答案</a>中这样实现&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+      </div>
+
+
+      <footer>
+        
+
+
+        
+        
+        
+        
+      </footer>
+    </article>
+
+    
+  </section>
+
+    </div>
+
+    <footer class="footer">
+  <section class="container">
+    ©
+    
+    2023
+     rhanqtl 
+    ·
+    
+    技术支持 <a href="https://gohugo.io/">Hugo</a> & <a href="https://github.com/luizdepra/hugo-coder/">Coder</a>.
+    
+  </section>
+</footer>
+
+  </main>
+
+  
+
+  
+  
+  <script src="/js/coder.min.6ae284be93d2d19dad1f02b0039508d9aab3180a12a06dcc71b0b0ef7825a317.js" integrity="sha256-auKEvpPS0Z2tHwKwA5UI2aqzGAoSoG3McbCw73gloxc="></script>
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</body>
+
+</html>

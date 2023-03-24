@@ -1,1 +1,20 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lex on rhanqtl</title><link>https://rhanqtl.github.io/tags/lex/</link><description>Recent content in Lex on rhanqtl</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sat, 04 Feb 2023 11:27:54 +0800</lastBuildDate><atom:link href="https://rhanqtl.github.io/tags/lex/index.xml" rel="self" type="application/rss+xml"/><item><title>用 Flex 和 Bison 实现一个计算器</title><link>https://rhanqtl.github.io/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</link><pubDate>Sat, 04 Feb 2023 11:27:54 +0800</pubDate><guid>https://rhanqtl.github.io/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</guid><description>-</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Lex on rhanqtl</title>
+    <link>https://rhanqtl.github.io/tags/lex/</link>
+    <description>Recent content in Lex on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sat, 04 Feb 2023 11:27:54 +0800</lastBuildDate><atom:link href="https://rhanqtl.github.io/tags/lex/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>用 Flex 和 Bison 实现一个计算器</title>
+      <link>https://rhanqtl.github.io/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</link>
+      <pubDate>Sat, 04 Feb 2023 11:27:54 +0800</pubDate>
+      
+      <guid>https://rhanqtl.github.io/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</guid>
+      <description>-</description>
+    </item>
+    
+  </channel>
+</rss>
