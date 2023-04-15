@@ -1,0 +1,59 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rhanqtl – Hugo</title>
+    <link>/tags/hugo/</link>
+    <description>Recent content in Hugo on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sat, 15 Apr 2023 18:14:43 +0800</lastBuildDate>
+    
+	  <atom:link href="/tags/hugo/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Posts: 博客主题迁移：从 Coder 到 Docsy</title>
+      <link>/posts/tools/migrating-from-coder-to-docsy/</link>
+      <pubDate>Sat, 15 Apr 2023 18:14:43 +0800</pubDate>
+      
+      <guid>/posts/tools/migrating-from-coder-to-docsy/</guid>
+      <description>
+        
+        
+        &lt;h1 id=&#34;缘起&#34;&gt;缘起&lt;/h1&gt;
+&lt;p&gt;最近写博客的内容格式从 Markdown 切到了 AsciiDoc&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;，发现目前用的 Coder 主题不支持这种格式&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;。网上有一些讲如何通过自定义 CSS 让 Coder 主题支持 AsciiDoc 的博客&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;，然而尝试过后发现效果很一般，我也不是非常有兴趣花很多时间学 CSS，就产生了切主题的想法。经过简单搜索发现 Docsy&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt; 能够支持 AsciiDoc。&lt;/p&gt;
+&lt;p&gt;本文用以记录迁移过程&lt;/p&gt;
+&lt;h1 id=&#34;迁移过程&#34;&gt;迁移过程&lt;/h1&gt;
+&lt;p&gt;总的来说改动不大，但是花的时间确实比我预计的要多，归根结底还是对 Hugo 本身的各种基础概念没有很好的了解。&lt;/p&gt;
+&lt;p&gt;使用 Docsy 需要安装一些依赖，这部分可以参考&lt;a href=&#34;https://blog.tangly.net/blog/2020/creating-a-technical-website-with-hugo-and-asciidoc/#_install_the_tools&#34;&gt;这里&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;接下来需要做的是修改配置，这部分抄一抄官方的&lt;a href=&#34;https://github.com/google/docsy/blob/1d126ab1bbf186fa0ea52a6d6a3f58229b2b7942/config.toml&#34;&gt;示例&lt;/a&gt;就可以了。&lt;/p&gt;
+&lt;p&gt;再然后需要加一些 &lt;code&gt;_index.md&lt;/code&gt; 文件配置导航栏。这里需要先了解 Hugo 中“&lt;a href=&#34;https://gohugo.io/content-management/sections/&#34;&gt;section&lt;/a&gt;”的概念。按照&lt;a href=&#34;https://github.com/google/docsy-example/tree/master/content&#34;&gt;示例站点&lt;/a&gt;的结构抄一下，你可能会发现导航栏没有显示出来想要的链接，这可能是因为没有对应的 template，比如我想要用 &lt;code&gt;posts&lt;/code&gt; 这个 section 代替默认的 &lt;code&gt;blog&lt;/code&gt; 来管理所有的博文，那么我就需要把 &lt;code&gt;docsy/layouts/blog&lt;/code&gt; 的部分拷贝到博客根目录的 &lt;code&gt;layouts&lt;/code&gt; 目录下。&lt;/p&gt;
+&lt;h1 id=&#34;心得&#34;&gt;心得&lt;/h1&gt;
+&lt;p&gt;总而言之还是要仔细读文档。&lt;/p&gt;
+&lt;p&gt;不过不得不吐槽的是 Hugo 搞出了太多的概念，有的时候为了扩展还必须要去修改主题的源文件，对于我这种想要开箱即用的用户来说不是很友好。&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;asciidoc.org&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;参见 &lt;a href=&#34;https://github.com/luizdepra/hugo-coder/issues/784&#34;&gt;issue #784&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:3&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://rgielen.net/posts/2019/creating-a-blog-with-hugo-and-asciidoctor/&#34;&gt;https://rgielen.net/posts/2019/creating-a-blog-with-hugo-and-asciidoctor/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:3&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:4&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.docsy.dev/&#34;&gt;https://www.docsy.dev/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:4&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

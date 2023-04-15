@@ -1,0 +1,69 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rhanqtl – Git</title>
+    <link>/tags/git/</link>
+    <description>Recent content in Git on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Fri, 17 Mar 2023 20:19:57 +0800</lastBuildDate>
+    
+	  <atom:link href="/tags/git/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Posts: Git 不常用命令速查（持续更新）</title>
+      <link>/posts/tools/git-cheatsheet/</link>
+      <pubDate>Fri, 17 Mar 2023 20:19:57 +0800</pubDate>
+      
+      <guid>/posts/tools/git-cheatsheet/</guid>
+      <description>
+        
+        
+        &lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_历史记录&#34;&gt;历史记录&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;sect2&#34;&gt;
+&lt;h3 id=&#34;_某一行相关的变更&#34;&gt;某一行相关的变更&lt;/h3&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;&lt;code&gt;git log -L_start_,&lt;em&gt;end&lt;/em&gt;:_file_&lt;/code&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;其中 &lt;code&gt;start&lt;/code&gt; 和 &lt;code&gt;end&lt;/code&gt; 可以是：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;ulist&#34;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;绝对数值&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;正则表达式（表示第一个匹配的行）&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;偏移量 &lt;code&gt;(+|-)&lt;em&gt;offset&lt;/em&gt;&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://stackoverflow.com/questions/50469927/view-git-history-of-specific-line&#34; class=&#34;bare&#34;&gt;https://stackoverflow.com/questions/50469927/view-git-history-of-specific-line&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;例如：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;bash&#34;&gt;git log &lt;span style=&#34;color: #000080&#34;&gt;-L720&lt;/span&gt;,+3:&lt;span style=&#34;color: #d14&#34;&gt;&amp;#39;lib/Transforms/Utils/PromoteMemoryToRegister.cpp&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

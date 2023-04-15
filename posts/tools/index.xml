@@ -1,0 +1,288 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rhanqtl – 工具</title>
+    <link>/posts/tools/</link>
+    <description>Recent content in 工具 on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sat, 15 Apr 2023 18:14:43 +0800</lastBuildDate>
+    
+	  <atom:link href="/posts/tools/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Posts: 博客主题迁移：从 Coder 到 Docsy</title>
+      <link>/posts/tools/migrating-from-coder-to-docsy/</link>
+      <pubDate>Sat, 15 Apr 2023 18:14:43 +0800</pubDate>
+      
+      <guid>/posts/tools/migrating-from-coder-to-docsy/</guid>
+      <description>
+        
+        
+        &lt;h1 id=&#34;缘起&#34;&gt;缘起&lt;/h1&gt;
+&lt;p&gt;最近写博客的内容格式从 Markdown 切到了 AsciiDoc&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;，发现目前用的 Coder 主题不支持这种格式&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;。网上有一些讲如何通过自定义 CSS 让 Coder 主题支持 AsciiDoc 的博客&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;，然而尝试过后发现效果很一般，我也不是非常有兴趣花很多时间学 CSS，就产生了切主题的想法。经过简单搜索发现 Docsy&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt; 能够支持 AsciiDoc。&lt;/p&gt;
+&lt;p&gt;本文用以记录迁移过程&lt;/p&gt;
+&lt;h1 id=&#34;迁移过程&#34;&gt;迁移过程&lt;/h1&gt;
+&lt;p&gt;总的来说改动不大，但是花的时间确实比我预计的要多，归根结底还是对 Hugo 本身的各种基础概念没有很好的了解。&lt;/p&gt;
+&lt;p&gt;使用 Docsy 需要安装一些依赖，这部分可以参考&lt;a href=&#34;https://blog.tangly.net/blog/2020/creating-a-technical-website-with-hugo-and-asciidoc/#_install_the_tools&#34;&gt;这里&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;接下来需要做的是修改配置，这部分抄一抄官方的&lt;a href=&#34;https://github.com/google/docsy/blob/1d126ab1bbf186fa0ea52a6d6a3f58229b2b7942/config.toml&#34;&gt;示例&lt;/a&gt;就可以了。&lt;/p&gt;
+&lt;p&gt;再然后需要加一些 &lt;code&gt;_index.md&lt;/code&gt; 文件配置导航栏。这里需要先了解 Hugo 中“&lt;a href=&#34;https://gohugo.io/content-management/sections/&#34;&gt;section&lt;/a&gt;”的概念。按照&lt;a href=&#34;https://github.com/google/docsy-example/tree/master/content&#34;&gt;示例站点&lt;/a&gt;的结构抄一下，你可能会发现导航栏没有显示出来想要的链接，这可能是因为没有对应的 template，比如我想要用 &lt;code&gt;posts&lt;/code&gt; 这个 section 代替默认的 &lt;code&gt;blog&lt;/code&gt; 来管理所有的博文，那么我就需要把 &lt;code&gt;docsy/layouts/blog&lt;/code&gt; 的部分拷贝到博客根目录的 &lt;code&gt;layouts&lt;/code&gt; 目录下。&lt;/p&gt;
+&lt;h1 id=&#34;心得&#34;&gt;心得&lt;/h1&gt;
+&lt;p&gt;总而言之还是要仔细读文档。&lt;/p&gt;
+&lt;p&gt;不过不得不吐槽的是 Hugo 搞出了太多的概念，有的时候为了扩展还必须要去修改主题的源文件，对于我这种想要开箱即用的用户来说不是很友好。&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;asciidoc.org&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;参见 &lt;a href=&#34;https://github.com/luizdepra/hugo-coder/issues/784&#34;&gt;issue #784&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:3&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://rgielen.net/posts/2019/creating-a-blog-with-hugo-and-asciidoctor/&#34;&gt;https://rgielen.net/posts/2019/creating-a-blog-with-hugo-and-asciidoctor/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:3&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:4&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.docsy.dev/&#34;&gt;https://www.docsy.dev/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:4&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Posts: VS Code 快捷键速查表</title>
+      <link>/posts/tools/vscode-shortcut-cheatsheet/</link>
+      <pubDate>Fri, 14 Apr 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/tools/vscode-shortcut-cheatsheet/</guid>
+      <description>
+        
+        
+        &lt;h1 id=&#34;约定&#34;&gt;约定&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;C&lt;/code&gt; 表示 &lt;code&gt;Ctrl&lt;/code&gt;，&lt;code&gt;S&lt;/code&gt; 表示 &lt;code&gt;Shift&lt;/code&gt;，&lt;code&gt;A&lt;/code&gt; 表示 &lt;code&gt;Alt&lt;/code&gt;，&lt;code&gt;T&lt;/code&gt; 表示 &lt;code&gt;Tab&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;字母一律用小写表示&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;←&lt;/code&gt; &lt;code&gt;→&lt;/code&gt; &lt;code&gt;↑&lt;/code&gt; &lt;code&gt;↓&lt;/code&gt; 分别表示对应的方向键&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;X&amp;gt;-&amp;lt;Y&amp;gt;&lt;/code&gt; 表示同时按 &lt;code&gt;&amp;lt;X&amp;gt;&lt;/code&gt; 和 &lt;code&gt;&amp;lt;Y&amp;gt;&lt;/code&gt; 两个键，&lt;code&gt;&amp;lt;X&amp;gt;-&amp;lt;Y&amp;gt;-&amp;lt;Z&amp;gt;&lt;/code&gt; 表示同时按 &lt;code&gt;&amp;lt;X&amp;gt;&lt;/code&gt;、&lt;code&gt;&amp;lt;Y&amp;gt;&lt;/code&gt; 和 &lt;code&gt;&amp;lt;Z&amp;gt;&lt;/code&gt; 三个键&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;X&amp;gt; &amp;lt;Y&amp;gt;&lt;/code&gt; 表示先按 &lt;code&gt;&amp;lt;X&amp;gt;&lt;/code&gt; 再按 &lt;code&gt;&amp;lt;Y&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;快捷键列表&#34;&gt;快捷键列表&lt;/h1&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;组合&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;功能&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-P&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;搜索并打开文件，当文件比较多不容易找但是记得名字时很有用；除了指定文件名，还可以指定行号和列号，格式为 &lt;code&gt;&amp;lt;file&amp;gt;[:&amp;lt;line&amp;gt;[:&amp;lt;col&amp;gt;]]&lt;/code&gt;，不过如果用 VS Code 集成的终端的话，这个功能没啥用&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-S-f&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;打开全局搜索工具，如果当前选中了一段文本，会使用该文本作为关键字&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-b&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;关闭边栏，可以和打开全局搜索的快捷键配合使用&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-S-p&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;执行 VS Code 命令&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-/&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;注释当前行，如果选中了一段文本，注释该段文本&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-←&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;回到光标所在的前一个位置&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-→&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;回到光标所在的后一个位置&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-↑&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;将当前行跟上一行交换&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-↓&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;将当前行跟下一行交换&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-T&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;切换标签页&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Posts: Git 不常用命令速查（持续更新）</title>
+      <link>/posts/tools/git-cheatsheet/</link>
+      <pubDate>Fri, 17 Mar 2023 20:19:57 +0800</pubDate>
+      
+      <guid>/posts/tools/git-cheatsheet/</guid>
+      <description>
+        
+        
+        &lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_历史记录&#34;&gt;历史记录&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;sect2&#34;&gt;
+&lt;h3 id=&#34;_某一行相关的变更&#34;&gt;某一行相关的变更&lt;/h3&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;&lt;code&gt;git log -L_start_,&lt;em&gt;end&lt;/em&gt;:_file_&lt;/code&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;其中 &lt;code&gt;start&lt;/code&gt; 和 &lt;code&gt;end&lt;/code&gt; 可以是：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;ulist&#34;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;绝对数值&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;正则表达式（表示第一个匹配的行）&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;偏移量 &lt;code&gt;(+|-)&lt;em&gt;offset&lt;/em&gt;&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://stackoverflow.com/questions/50469927/view-git-history-of-specific-line&#34; class=&#34;bare&#34;&gt;https://stackoverflow.com/questions/50469927/view-git-history-of-specific-line&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;例如：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;bash&#34;&gt;git log &lt;span style=&#34;color: #000080&#34;&gt;-L720&lt;/span&gt;,+3:&lt;span style=&#34;color: #d14&#34;&gt;&amp;#39;lib/Transforms/Utils/PromoteMemoryToRegister.cpp&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Posts: Visual Studio Code C/C&#43;&#43; 开发环境搭建</title>
+      <link>/posts/tools/c&#43;&#43;-dev-setup-with-vscode/</link>
+      <pubDate>Mon, 13 Feb 2023 10:50:20 +0800</pubDate>
+      
+      <guid>/posts/tools/c&#43;&#43;-dev-setup-with-vscode/</guid>
+      <description>
+        
+        
+        &lt;h1 id=&#34;安装-vs-code&#34;&gt;安装 VS Code&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://code.visualstudio.com&#34;&gt;官网&lt;/a&gt;下载&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;小技巧：如果官网下载比较慢，可以把下载地址中的 &lt;code&gt;az764295.vo.msecnd.net&lt;/code&gt; 更换为 &lt;code&gt;vscode.cdn.azure.cn&lt;/code&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;安装-clangdclangd-homepage&#34;&gt;安装 clangd&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/h1&gt;
+&lt;p&gt;在 Arch Linux 上，&lt;code&gt;clangd&lt;/code&gt; 在 &lt;code&gt;clang&lt;/code&gt; 这个包中，用如下命令安装：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ pacman -S clang
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;其他平台可能会使用 &lt;code&gt;clang-extra-tools&lt;/code&gt; 这个名称&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;生成-compile_commandsjson&#34;&gt;生成 compile_commands.json&lt;/h1&gt;
+&lt;p&gt;以 CMake 为例（所以你需要安装 CMake），项目目录结构如下：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;./images/project-structure.png&#34; alt=&#34;项目目录结构&#34;&gt;&lt;/p&gt;
+&lt;p&gt;首先使用&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;配置项目，然后你会看到 &lt;code&gt;build&lt;/code&gt; 目录下有一个 &lt;code&gt;compile_commands.json&lt;/code&gt; 文件&lt;/p&gt;
+&lt;h1 id=&#34;配置-clangd&#34;&gt;配置 clangd&lt;/h1&gt;
+&lt;p&gt;如果你安装了 M$ 默认的 cpp-tools，首先需要在 VS Code 中将一些功能关掉（设为 &lt;code&gt;disabled&lt;/code&gt;），包括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;C_Cpp.autocomplete&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;C_Cpp.errorSquiggles&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;C_Cpp.intelliSenseEngine&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;C_Cpp.intelliSenseEngineFallback&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;在配置之前，你应该会看到 &lt;code&gt;*.cpp&lt;/code&gt; 文件中的 &lt;code&gt;#include &amp;quot;stringutil.hpp&amp;quot;&lt;/code&gt; 报错，因为这个头文件在当前目录下找不到。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;然后，打开 clangd 插件的配置，在“Clangd: Arguments”加入如下的内容：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--background-index
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--completion-style=detailed
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--all-scopes-completion
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--clang-tidy
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--enable-config
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--log=verbose
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--pretty
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--pch-storage=memory
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--header-insertion=iwyu
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--ranking-model=heuristics
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--completion-parse=auto
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--fallback-style=Google
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;--compile-commands-dir=build
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;当然，你也可以选择在项目根目录下创建 &lt;code&gt;.vscode/settings.json&lt;/code&gt; 文件然后将如下内容加入：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;clangd.arguments&amp;#34;&lt;/span&gt;: [
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--all-scopes-completion&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--background-index&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--clang-tidy&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--compile-commands-dir=build&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--completion-parse=auto&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--completion-style=detailed&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--enable-config&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--fallback-style=Google&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--header-insertion=iwyu&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--log=verbose&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--pch-storage=memory&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--pretty&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;--ranking-model=heuristics&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;然后使用 &lt;code&gt;Ctrl-Shift-P&lt;/code&gt; 开启命令面板，选择 &lt;code&gt;clangd: Restart language server&lt;/code&gt; 运行，应该就会看到之前的报错消失了。&lt;/p&gt;
+&lt;h1 id=&#34;调试&#34;&gt;调试&lt;/h1&gt;
+&lt;p&gt;安装插件 CodeLLDB（ID 为 &lt;code&gt;vadimcn.vscode-lldb&lt;/code&gt;）。在 &lt;code&gt;launch.json&lt;/code&gt; 加入如下内容：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Use IntelliSense to learn about possible attributes.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Hover to view descriptions of existing attributes.
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;0.2.0&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;configurations&amp;#34;&lt;/span&gt;: [
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Debug&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;lldb&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;request&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;launch&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;program&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;${workspaceFolder}/build/a.out&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;args&amp;#34;&lt;/span&gt;: [ &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;-arg1&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;-arg2&amp;#34;&lt;/span&gt; ],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// &amp;#34;preLaunchTask&amp;#34;: &amp;#34;&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://ahemery.dev/2020/08/24/c-cpp-vscode/&#34;&gt;My C/C++ Dev Setup with VSCode - ANT-HEM&amp;rsquo;S TECH BLOG&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://juejin.cn/post/7126880493668139021&#34;&gt;为vscode配置clangd&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/vadimcn/codelldb/blob/v1.9.0/MANUAL.md&#34;&gt;CodeLLDB Manual&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://clangd.llvm.org/&#34;&gt;https://clangd.llvm.org/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

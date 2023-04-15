@@ -1,0 +1,4 @@
+override XYZ := Makefile
+
+dummy:
+	@echo $(XYZ)

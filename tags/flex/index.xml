@@ -1,19 +1,307 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Flex on rhanqtl</title>
-    <link>https://rhanqtl.github.io/tags/flex/</link>
+    <title>rhanqtl – Flex</title>
+    <link>/tags/flex/</link>
     <description>Recent content in Flex on rhanqtl</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Sat, 04 Feb 2023 11:27:54 +0800</lastBuildDate><atom:link href="https://rhanqtl.github.io/tags/flex/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 04 Feb 2023 11:27:54 +0800</lastBuildDate>
+    
+	  <atom:link href="/tags/flex/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
     <item>
-      <title>用 Flex 和 Bison 实现一个计算器</title>
-      <link>https://rhanqtl.github.io/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</link>
+      <title>Posts: 用 Flex 和 Bison 实现一个计算器</title>
+      <link>/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</link>
       <pubDate>Sat, 04 Feb 2023 11:27:54 +0800</pubDate>
       
-      <guid>https://rhanqtl.github.io/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</guid>
-      <description>-</description>
+      <guid>/posts/compilers/build-your-own-programming-language/01-flex-bison-intro/</guid>
+      <description>
+        
+        
+        &lt;blockquote&gt;
+&lt;p&gt;本文需要你有一定的 C/C++ 基础和编译原理基础，包括：了解 C/C++ 基本的编译模型，词法分析（会写正则表达式）、语法分析（至少能够定义文法，了解 BNF 更好）&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;词法规则定义&#34;&gt;词法规则定义&lt;/h1&gt;
+&lt;p&gt;Flex 文件包含三个部分：一些 C 语言的声明定义、匹配 token 的规则（正则表达式）和匹配成功时的动作，以及 C 函数定义，三个部分之间用 &lt;code&gt;%%&lt;/code&gt; 分开，如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;%{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ... prologue ...
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;%}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;... Bison declarations ...
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;%%
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;... grammar ...
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;%%
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;... epilogue ...
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;词法规则的第一部分如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-flex&#34; data-lang=&#34;flex&#34;&gt;%{
+  #include &amp;lt;stdlib.h&amp;gt;
+
+  #include &amp;#34;calc.tab.h&amp;#34;
+
+  void yyerror(const char *fmt, ...);
+%}
+
+%option noyywrap nodefault
+
+number  [0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中 &lt;code&gt;%{ ... %}&lt;/code&gt; 内的部分会被原样拷贝到生成的 &lt;code&gt;.c&lt;/code&gt; 文件中：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;#include &amp;quot;calc.tab.h&amp;quot;&lt;/code&gt; 是 Bison 生成的头文件，其中包含 token 的定义和 C 函数的声明&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;yyerror&lt;/code&gt; 是报告错误的函数，定义在语法规则文件中&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;%option noyywrap&lt;/code&gt; 表示不需要默认定义 &lt;code&gt;yywrap&lt;/code&gt; 函数，这个函数时早期的遗留，现在几乎不使用&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;%option nodefault&lt;/code&gt; 表示禁用默认的 &lt;code&gt;main&lt;/code&gt; 函数&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最后的 &lt;code&gt;number ...&lt;/code&gt; 相当于给正则表达式起了个名字，后面可以通过名字引用。注意，不支持符号，这里跟常见的编程语言一致，认为负数实际上是对字面量应用取反运算符。&lt;/p&gt;
+&lt;p&gt;此法规则的第二部分如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-flex&#34; data-lang=&#34;flex&#34;&gt;%%
+
+{number}    {
+              yylval = atof(yytext);
+              return NUM;
+            }
+
+[-+*/^()]   { return yytext[0]; }
+
+\n          {
+              yycolumn = 1;
+              return yytext[0];
+            }
+[ \t\r\f]   ;
+
+.           yyerror(&amp;#34;invalid character&amp;#34;);
+
+%%
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每一条规则都包含一个模式和一组动作。其中：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;第一个规则的 &lt;code&gt;number&lt;/code&gt; 就是前一部分定义的正则表达式，其动作表示我们要将当前的 lexeme 转换为 &lt;code&gt;double&lt;/code&gt; 赋给保存语义值的 yylval 变量，并返回 &lt;code&gt;NUM&lt;/code&gt; 表示当前匹配到了 &lt;code&gt;NUM&lt;/code&gt; 这个 token；&lt;/li&gt;
+&lt;li&gt;第二条规则匹配到的都是单字符的运算符，不需要额外的名字，表示原样返回对应的字符；&lt;/li&gt;
+&lt;li&gt;第四条规则的动作部分只有一个 &lt;code&gt;;&lt;/code&gt;，表示将相关字符忽略掉，具体的，这里就是忽略除 &lt;code&gt;\n&lt;/code&gt; 之外的空白符。&lt;/li&gt;
+&lt;li&gt;最后一条规则表示任何没有匹配的字符都要报错&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Flex 有一个重要的限制是不支持 Unicode，如果想要支持 Unicode 只能自己实现词法分析器然后与语法分析器对接起来（通过 &lt;code&gt;yylex&lt;/code&gt; 函数）。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;语法规则定义&#34;&gt;语法规则定义&lt;/h1&gt;
+&lt;p&gt;为了实现运算符的优先级和结合性，对于数学表达式，教科书上通常会给出这样的文法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;expr    → term
+term    → term &amp;#39;+&amp;#39; factor | term &amp;#39;-&amp;#39; factor
+factor  → factor &amp;#39;*&amp;#39; unary | factor &amp;#39;/&amp;#39; unary
+unary   → primary | &amp;#39;-&amp;#39; unary
+primary → NUM | &amp;#39;(&amp;#39; expr &amp;#39;)&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;但是这种文法需要引入若干额外的名字（毕竟起名字是一件很难的事），而且关于优先级和结合性的信息是隐含的，不便于理解，因此 Bison 提供了一种简便的方式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;...
+
+%left &amp;#39;+&amp;#39; &amp;#39;-&amp;#39;
+%left &amp;#39;*&amp;#39; &amp;#39;/&amp;#39;
+%nonassoc NEG
+%right &amp;#39;^&amp;#39;
+
+%%
+
+expr : expr &amp;#39;+&amp;#39; expr
+     | expr &amp;#39;-&amp;#39; expr
+     | expr &amp;#39;*&amp;#39; expr
+     | expr &amp;#39;/&amp;#39; expr
+     | expr &amp;#39;^&amp;#39; expr
+     | &amp;#39;-&amp;#39; expr %prec NEG
+
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意中间的 &lt;code&gt;%left&lt;/code&gt; 这部分，&lt;code&gt;%left&lt;/code&gt; 表示其后的运算符是左结合的，而从上到下的顺序表示优先级从高到低。&lt;/p&gt;
+&lt;p&gt;Bison 文件的总体结构与 Flex 文件相同，所不同的是具体的内容。&lt;/p&gt;
+&lt;p&gt;语法规则定义的第一部分如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;%{
+  #include &amp;lt;stdio.h&amp;gt;
+  #include &amp;lt;math.h&amp;gt;
+
+  const char *PROMPT = &amp;#34;=&amp;gt; &amp;#34;;
+
+  int yylex(void);
+  void yyerror(const char *format, ...);
+%}
+
+%define api.value.type {double}
+
+%token NUM
+
+%left &amp;#39;+&amp;#39; &amp;#39;-&amp;#39;
+%left &amp;#39;*&amp;#39; &amp;#39;/&amp;#39;
+%nonassoc NEG
+%right &amp;#39;^&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与 Flex 文件相同，&lt;code&gt;%{ ... %}&lt;/code&gt; 中的部分是一些 C 语言的头文件包含、常量定义和函数声明；&lt;code&gt;%define ...&lt;/code&gt; 表示将 词法分析中保存语义值的变量 &lt;code&gt;yylval&lt;/code&gt; 的类型 YYSTYPE 定义为 &lt;code&gt;double&lt;/code&gt;；&lt;code&gt;%token NUM&lt;/code&gt; 表示定义一个名为 &lt;code&gt;NUM&lt;/code&gt; 的 token 类型；最后的几行就是前面提到的优先级和结合性的定义。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;你可能会好奇为什么 token 类别是由语法分析器定义的。我没有看到任何关于这一点的解释，但是有一个合理的推测：Flex 和 Bison 不是一起开发的，Bison 甚至不要求词法分析器一定是 Flex 生成的；语法分析过程需要了解 token 类别，这有一种做法是让词法分析器定义或者使用单独的头文件，但是如你所见，Bison 可以对 token 定义优先级，这一点使得无论如何 &lt;code&gt;.y&lt;/code&gt; 文件中都会出现一些相关的定义，不如就直接由 Bison 定义。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;第二部分如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;%%
+
+input : %empty
+      | input line { printf(PROMPT); }
+      ;
+
+line : &amp;#39;\n&amp;#39;
+     | expr &amp;#39;\n&amp;#39;  { printf(&amp;#34;%.17g\n&amp;#34;, $1); }
+     ;
+
+expr : NUM                { $$ = $1; }
+     | &amp;#39;(&amp;#39; expr &amp;#39;)&amp;#39;       { $$ = $2; }
+     | expr &amp;#39;+&amp;#39; expr      { $$ = $1 + $3; }
+     | expr &amp;#39;-&amp;#39; expr      { $$ = $1 - $3; }
+     | expr &amp;#39;*&amp;#39; expr      { $$ = $1 * $3; }
+     | expr &amp;#39;/&amp;#39; expr      { $$ = $1 / $3; }
+     | expr &amp;#39;^&amp;#39; expr      { $$ = pow($1, $3); }
+     | &amp;#39;-&amp;#39; expr %prec NEG { $$ = -$2; }
+     ;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中顶层规则 &lt;code&gt;input&lt;/code&gt; 表示输入可以为空字符串（&lt;code&gt;%empty&lt;/code&gt; 是 Bison 内置的表示空字符串的符号），也可以由若干个 &lt;code&gt;line&lt;/code&gt; 组成，其动作在下一个部分解释；规则 &lt;code&gt;line&lt;/code&gt; 表示一行可以直接给出换行，也可以有一个表达式；规则 &lt;code&gt;expr&lt;/code&gt; 定义了我们支持的运算，其中 &lt;code&gt;$$&lt;/code&gt; 表示产生式左侧所对应的语义值，&lt;!-- raw HTML omitted --&gt;$&lt;!-- raw HTML omitted --&gt;n&lt;!-- raw HTML omitted --&gt;&lt;!-- raw HTML omitted --&gt; 表示产生式右侧第 &lt;code&gt;n&lt;/code&gt; 个终结符或非终结符的语义值。&lt;/p&gt;
+&lt;p&gt;这里注意 &lt;code&gt;expr&lt;/code&gt; 的倒数第二个产生式，因为前一部分并没有定义一元 &lt;code&gt;-&lt;/code&gt; 运算符的优先级，而仅定义了 &lt;code&gt;NEG&lt;/code&gt; 这个优先级，这里需要用 &lt;code&gt;%prec NEG&lt;/code&gt; 将该产生式与对应的优先级关联起来。&lt;/p&gt;
+&lt;p&gt;第三部分如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;%%
+
+int main(int argc, char *argv) {
+  printf(PROMPT);
+  return yyparse();
+}
+
+void yyerror(const char *fmt, ...) {
+  fprintf(stderr, &amp;#34;%s\n&amp;#34;, fmt);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;main&lt;/code&gt; 函数中首先打印提示符，然后调用 &lt;code&gt;yyparse&lt;/code&gt; 函数开始解析，由于在语法分析完成之前（即，遇到 EOF）函数 &lt;code&gt;yyparse&lt;/code&gt; 都不会返回，这里不能在 &lt;code&gt;while&lt;/code&gt; 循环体中打印提示符，而是需要在解析完成一行（即，一个表达式后）打印新的提示符（因为这时已经在 &lt;code&gt;line&lt;/code&gt; 中打印了表达式的值，所以不会干扰）；函数 &lt;code&gt;yyerror&lt;/code&gt; 就是报告错误函数的实现。&lt;/p&gt;
+&lt;h1 id=&#34;改进错误恢复&#34;&gt;改进：错误恢复&lt;/h1&gt;
+&lt;p&gt;现在的计算器在出现语法错误时会直接崩溃，这不是我们期望的结果，一个健壮的计算器应该能够报告错误并从中恢复，为此，我们需要修改词法和语法的定义。&lt;/p&gt;
+&lt;p&gt;在词法规则定义中加入：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-flex&#34; data-lang=&#34;flex&#34;&gt;%{
+  /* ... */
+  int yycolumn = 1;
+
+  #define YY_USER_ACTION \
+    do { \
+      yylloc.first_line = yylloc.last_line = yylineno; \
+      yylloc.first_column = yycolumn; \
+      yylloc.last_column = yycolumn + yyleng - 1; \
+      yycolumn += yyleng;   \
+    } while (0);
+%}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;由于 Flex 只能够自动维护行号（即 &lt;code&gt;yylineno&lt;/code&gt;），所以这里定义一个变量 &lt;code&gt;yycolumn&lt;/code&gt; 来手动维护列号&lt;/li&gt;
+&lt;li&gt;Flex 在匹配到 token 并设置好 &lt;code&gt;yytext&lt;/code&gt; 和 &lt;code&gt;yyleng&lt;/code&gt; 后、在执行关联的语义动作之前，会展开 &lt;code&gt;YY_USER_ACTION&lt;/code&gt; 钩子，给用户一些扩展空间，这里就是我们的定义，其中 &lt;code&gt;yylloc&lt;/code&gt; 是用于表示 token 位置的结构体，其类型默认定义为&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;typedef&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; YYLTYPE {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; first_line;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; first_column;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; last_line;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; last_column;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;} YYLTYPE;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;可以通过如下方式覆盖默认的 &lt;code&gt;YYLTYPE&lt;/code&gt; 定义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;%{
+  #include &amp;#34;location.h&amp;#34;
+%}
+
+%define api.location.type {location_t}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在 Flex 文件中也需要修改：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-flex&#34; data-lang=&#34;flex&#34;&gt;%{
+  // 顺序不能颠倒，否则 calc.tab.h 中找不到 `location_t` 这个符号
+  #include &amp;#34;location.h&amp;#34;
+  #include &amp;#34;calc.tab.h&amp;#34;
+%}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;原因见 &lt;a href=&#34;https://stackoverflow.com/questions/10386567/yylloc-undefined-in-this-scope&#34;&gt;StackOverflow&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;在另一个名为 &lt;code&gt;location.h&lt;/code&gt; 的文件中，可以如下定义：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;typedef&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; __location {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; filename;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; first_line;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; first_column;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; last_line;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; last_column;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;} &lt;span style=&#34;color:#66d9ef&#34;&gt;location_t&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/blockquote&gt;
+&lt;p&gt;在语法规则定义中加入：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;%locations
+/* ... */
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;表示开启位置特性&lt;/p&gt;
+&lt;p&gt;在 &lt;code&gt;line&lt;/code&gt; 加入一条产生式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;line : error \n { yyerrok; }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;error&lt;/code&gt; 是 Bison 保留的关键字，用于表示错误情况，动作中的 &lt;code&gt;yyerrok&lt;/code&gt; 表示忽略错误，恢复到正常状态。&lt;/p&gt;
+&lt;p&gt;将除法的产生式修改为：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;expr : expr &amp;#39;/&amp;#39; expr { if ($3 != 0) {
+                         $$ = $1 / $3;
+                       } else {
+                         $$ = INT_MIN;
+                         fprintf(stderr, &amp;#34;%d:%d-%d:%d: divide by zero\n&amp;#34;,
+                             @3.first_line, @3.first_column,
+                             @3.last_line, @3.last_column);
+                       }
+                     }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们会首先判断除数是否为 0，如果不为 0，正常进行除法运算，否则报错。其中 &lt;code&gt;@3&lt;/code&gt; 是包含了产生式右侧第三个符号的位置的结构体（类型为 &lt;code&gt;YYLTYPE&lt;/code&gt;）。&lt;/p&gt;
+&lt;p&gt;修改 &lt;code&gt;yyerror&lt;/code&gt; 的定义：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;yyerror&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;fmt, ...) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;extern&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;yytext;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;fprintf&lt;/span&gt;(stderr, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;%d:%d-%d:%d: &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;%s&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\&amp;#34;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;  error: %s&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      yylloc.first_line, yylloc.first_column,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      yylloc.last_line, yylloc.last_column, yytext, fmt);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;由于 &lt;code&gt;yytext&lt;/code&gt; 是词法分析器中的变量，这里需要将其声明为 &lt;code&gt;extern&lt;/code&gt;，但是并不建议直接使用，因为语法分析过程可能会 look ahead 导致 &lt;code&gt;yytext&lt;/code&gt; 并不是出错的 token。&lt;/p&gt;
+&lt;p&gt;这样我们就有了一个健壮的，能够报告错误的计算器。&lt;/p&gt;
+&lt;h1 id=&#34;改进读取写入文件&#34;&gt;改进：读取/写入文件&lt;/h1&gt;
+&lt;p&gt;在语法规则定义中加入：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;%{
+  /* ... */
+  #include &amp;lt;stdbool.h&amp;gt;
+
+  const char *filename = &amp;#34;&amp;lt;interactive&amp;gt;&amp;#34;;
+  bool interactive = true;
+%}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改 &lt;code&gt;input&lt;/code&gt; 规则：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-bison&#34; data-lang=&#34;bison&#34;&gt;input : %empty
+      | input line { if (interactive) {
+                       printf(PROMPT);
+                     }
+                   }
+      ;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改 &lt;code&gt;main&lt;/code&gt; 函数：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; argc, &lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;argv[]) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;extern&lt;/span&gt; FILE &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;yyin;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;extern&lt;/span&gt; FILE &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;yyout;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (argc &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    filename &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; argv[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;];
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    yyin &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fopen&lt;/span&gt;(filename, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;r&amp;#34;&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    interactive &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; false;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (argc &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    yyout &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fopen&lt;/span&gt;(argv[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;], &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;w&amp;#34;&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (interactive) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;printf&lt;/span&gt;(PROMPT);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; ret &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;yyparse&lt;/span&gt;();
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;interactive) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;fclose&lt;/span&gt;(yyin);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;fclose&lt;/span&gt;(yyout);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ret;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此外，还需要将所有的输出改为 &lt;code&gt;fprintf(yyout, ...)&lt;/code&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;不过输出到文件应该不是太重要，完全可以用 I/O 重定向实现，这里只是为了介绍 &lt;code&gt;yyout&lt;/code&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;结论&#34;&gt;结论&lt;/h1&gt;
+&lt;p&gt;本文首先介绍了计算器的基本词法规则定义和基本语法规则定义，详细解释了各部分的含义。然后，借助 Flex 和 Bison 提供的功能，本文改进了该计算器，使得其更加健壮且能够报告出错位置。最后，本文为计算器增加了读取并解释文件以及将结果输出到文件的功能。&lt;/p&gt;
+&lt;p&gt;源码见 &lt;a href=&#34;./src/src/calc.y&#34;&gt;calc.y&lt;/a&gt;、&lt;a href=&#34;./src/src/calc.l&#34;&gt;calc.l&lt;/a&gt;、&lt;a href=&#34;./src/include/location.h&#34;&gt;location.h&lt;/a&gt; 和 &lt;a href=&#34;./src/Makefile&#34;&gt;Makefile&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;参考&#34;&gt;参考&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.gnu.org/software/bison/manual/html_node/Location-Type.html&#34;&gt;3.5.1 Data Type of Locations - Bison Manual&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+      </description>
     </item>
     
   </channel>

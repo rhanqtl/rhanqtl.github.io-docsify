@@ -1,0 +1,17 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rhanqtl – C&#43;&#43; 程序设计笔记</title>
+    <link>/posts/c&#43;&#43;-notes/</link>
+    <description>Recent content in C&#43;&#43; 程序设计笔记 on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/posts/c++-notes/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+  </channel>
+</rss>

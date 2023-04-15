@@ -1,37 +1,77 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Poems on rhanqtl</title>
-    <link>https://rhanqtl.github.io/poems/</link>
+    <title>rhanqtl – Poems</title>
+    <link>/poems/</link>
     <description>Recent content in Poems on rhanqtl</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Sat, 02 May 2020 18:02:13 +0800</lastBuildDate><atom:link href="https://rhanqtl.github.io/poems/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 02 May 2020 18:02:13 +0800</lastBuildDate>
+    
+	  <atom:link href="/poems/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
     <item>
-      <title>辛弃疾 | 青玉案·元夕</title>
-      <link>https://rhanqtl.github.io/poems/xin-qi-ji-qing-yu-an-yuan-xi/</link>
+      <title>Poems: 辛弃疾 | 青玉案·元夕</title>
+      <link>/poems/xin-qi-ji-qing-yu-an-yuan-xi/</link>
       <pubDate>Sat, 02 May 2020 18:02:13 +0800</pubDate>
       
-      <guid>https://rhanqtl.github.io/poems/xin-qi-ji-qing-yu-an-yuan-xi/</guid>
-      <description>~</description>
+      <guid>/poems/xin-qi-ji-qing-yu-an-yuan-xi/</guid>
+      <description>
+        
+        
+        &lt;p&gt;东风夜放花千树。更吹落、星如雨。宝马雕车香满路，风箫声动，玉壶光转，一夜鱼龙舞。&lt;/p&gt;
+&lt;p&gt;蛾儿雪柳黄金缕。笑语盈盈暗香去。众里寻它千百度。蓦然回首，那人却在，灯火阑珊处。&lt;/p&gt;
+
+      </description>
     </item>
     
     <item>
-      <title>李白 | 侠客行</title>
-      <link>https://rhanqtl.github.io/poems/li-bai-xia-ke-xing/</link>
+      <title>Poems: 李白 | 侠客行</title>
+      <link>/poems/li-bai-xia-ke-xing/</link>
       <pubDate>Thu, 18 Jul 2019 19:48:10 +0800</pubDate>
       
-      <guid>https://rhanqtl.github.io/poems/li-bai-xia-ke-xing/</guid>
-      <description>~</description>
+      <guid>/poems/li-bai-xia-ke-xing/</guid>
+      <description>
+        
+        
+        &lt;p&gt;赵客缦胡缨，吴钩霜雪明。&lt;/p&gt;
+&lt;p&gt;银鞍照白马，飒沓如流星。&lt;/p&gt;
+&lt;p&gt;十步杀一人，千里不留行。&lt;/p&gt;
+&lt;p&gt;事了拂衣去，深藏身与名。&lt;/p&gt;
+&lt;p&gt;闲过信陵饮，脱剑膝前横。&lt;/p&gt;
+&lt;p&gt;将炙啖朱亥，持觞劝侯嬴。&lt;/p&gt;
+&lt;p&gt;三杯吐然诺，五岳倒为轻。&lt;/p&gt;
+&lt;p&gt;眼花耳热后，意气素霓生。&lt;/p&gt;
+&lt;p&gt;救赵挥金槌，邯郸先震惊。&lt;/p&gt;
+&lt;p&gt;千秋二壮士，烜赫大梁城。&lt;/p&gt;
+&lt;p&gt;纵死侠骨香，不惭世上英。&lt;/p&gt;
+&lt;p&gt;谁能书阁下，白首太玄经。&lt;/p&gt;
+
+      </description>
     </item>
     
     <item>
-      <title>李白 | 短歌行</title>
-      <link>https://rhanqtl.github.io/poems/li-bai-duan-ge-xing/</link>
+      <title>Poems: 李白 | 短歌行</title>
+      <link>/poems/li-bai-duan-ge-xing/</link>
       <pubDate>Thu, 18 Jul 2019 18:42:51 +0800</pubDate>
       
-      <guid>https://rhanqtl.github.io/poems/li-bai-duan-ge-xing/</guid>
-      <description>~</description>
+      <guid>/poems/li-bai-duan-ge-xing/</guid>
+      <description>
+        
+        
+        &lt;p&gt;白日何短短，百年苦易满。&lt;/p&gt;
+&lt;p&gt;苍穹浩茫茫，万劫太极长。&lt;/p&gt;
+&lt;p&gt;麻姑垂两鬓，一半已成霜。&lt;/p&gt;
+&lt;p&gt;天公见玉女，大笑亿千场。&lt;/p&gt;
+&lt;p&gt;吾欲揽六龙，回车挂扶桑。&lt;/p&gt;
+&lt;p&gt;北斗酌美酒，劝龙各一觞。&lt;/p&gt;
+&lt;p&gt;富贵非所愿，与人驻颜光。&lt;/p&gt;
+
+      </description>
     </item>
     
   </channel>

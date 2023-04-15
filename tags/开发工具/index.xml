@@ -1,0 +1,90 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rhanqtl – 开发工具</title>
+    <link>/tags/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/</link>
+    <description>Recent content in 开发工具 on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Fri, 14 Apr 2023 00:00:00 +0000</lastBuildDate>
+    
+	  <atom:link href="/tags/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Posts: VS Code 快捷键速查表</title>
+      <link>/posts/tools/vscode-shortcut-cheatsheet/</link>
+      <pubDate>Fri, 14 Apr 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/tools/vscode-shortcut-cheatsheet/</guid>
+      <description>
+        
+        
+        &lt;h1 id=&#34;约定&#34;&gt;约定&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;C&lt;/code&gt; 表示 &lt;code&gt;Ctrl&lt;/code&gt;，&lt;code&gt;S&lt;/code&gt; 表示 &lt;code&gt;Shift&lt;/code&gt;，&lt;code&gt;A&lt;/code&gt; 表示 &lt;code&gt;Alt&lt;/code&gt;，&lt;code&gt;T&lt;/code&gt; 表示 &lt;code&gt;Tab&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;字母一律用小写表示&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;←&lt;/code&gt; &lt;code&gt;→&lt;/code&gt; &lt;code&gt;↑&lt;/code&gt; &lt;code&gt;↓&lt;/code&gt; 分别表示对应的方向键&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;X&amp;gt;-&amp;lt;Y&amp;gt;&lt;/code&gt; 表示同时按 &lt;code&gt;&amp;lt;X&amp;gt;&lt;/code&gt; 和 &lt;code&gt;&amp;lt;Y&amp;gt;&lt;/code&gt; 两个键，&lt;code&gt;&amp;lt;X&amp;gt;-&amp;lt;Y&amp;gt;-&amp;lt;Z&amp;gt;&lt;/code&gt; 表示同时按 &lt;code&gt;&amp;lt;X&amp;gt;&lt;/code&gt;、&lt;code&gt;&amp;lt;Y&amp;gt;&lt;/code&gt; 和 &lt;code&gt;&amp;lt;Z&amp;gt;&lt;/code&gt; 三个键&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;X&amp;gt; &amp;lt;Y&amp;gt;&lt;/code&gt; 表示先按 &lt;code&gt;&amp;lt;X&amp;gt;&lt;/code&gt; 再按 &lt;code&gt;&amp;lt;Y&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;快捷键列表&#34;&gt;快捷键列表&lt;/h1&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;组合&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;功能&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-P&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;搜索并打开文件，当文件比较多不容易找但是记得名字时很有用；除了指定文件名，还可以指定行号和列号，格式为 &lt;code&gt;&amp;lt;file&amp;gt;[:&amp;lt;line&amp;gt;[:&amp;lt;col&amp;gt;]]&lt;/code&gt;，不过如果用 VS Code 集成的终端的话，这个功能没啥用&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-S-f&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;打开全局搜索工具，如果当前选中了一段文本，会使用该文本作为关键字&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-b&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;关闭边栏，可以和打开全局搜索的快捷键配合使用&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-S-p&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;执行 VS Code 命令&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-/&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;注释当前行，如果选中了一段文本，注释该段文本&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-←&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;回到光标所在的前一个位置&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-→&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;回到光标所在的后一个位置&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-↑&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;将当前行跟上一行交换&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;A-↓&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;将当前行跟下一行交换&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;code&gt;C-T&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;切换标签页&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>
