@@ -1,137 +1,82 @@
-baseURL = 'https://rhanqtl.github.io'
-title = "rhanqtl"
-theme = "hugo-coder"
-languageCode = 'zh-cn'
-defaultContentLanguage = "zh-cn"
-paginate = 20
-enableEmoji = true
+baseURL = '/'
+title = 'rhanqtl'
+
+contentDir = "content/zh-cn"
+defaultContentLanguage = 'zh-cn'
+
+[module]
+  proxy = "direct"
+  # uncomment line below for temporary local development of module
+  # replacements = "github.com/google/docsy -> ../../docsy"
+  [module.hugoVersion]
+    extended = true
+    min = "0.73.0"
+  [[module.imports]]
+    path = "github.com/google/docsy"
+    disable = false
+  [[module.imports]]
+    path = "github.com/google/docsy/dependencies"
+    disable = false
+
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+
+[permalinks]
+  blog = "/:section/:year/:month/:day/:slug/"
+  [security]
+    [security.exec]
+      allow = ["^dart-sass-embedded$", "^go$", "^npx$", "^postcss$", "^asciidoctor$"]
+      osEnv = ["(?i)^((HTTPS?|NO)_PROXY|PATH(EXT)?|APPDATA|TE?MP|TERM)$"]
+    [security.funcs]
+      getenv = "^HUGO_"
+
+
+[languages]
+  [languages.zh-cn]
+    title = "rhanqtl"
+    description = "rhanqtl 的博客"
+    languageName = "Simplified Chinese"
+    time_format_default = "2006 年 01 月 02 日"
+    time_format_log = "2006 年 01 月 02 日"
+    weight = 1
+  [language.en]
+    title = "rhanqtl"
+    description = "rhanqtl's blog"
+    languageName = "English"
+    contentDir = "content/en"
+    time_format_default = "01 02, 2006"
+    time_format_log = "01 02, 2006"
 
 [markup]
   [markup.asciidocExt]
-    sectionNumbers = true
-    safeMode = "unsafe"
+    extensions = ["asciidoctor-diagram"]
+    # workingFolderCurrent = true
     [markup.asciidocExt.attributes]
       source-highlighter = "rouge"
-      rouge-style = "molokai"
+      rouge-style = "github"
+      rouge-css = "style"
       icons = "font"
-      # tip-caption = "💡"
-  [markup.tableOfContents]
-    startLevel = 1
-    endLevel   = 5
-    ordered    = false
-
-[security]
-   enableInlineShortcodes = false
-  [security.exec]
-    allow = ["^dart-sass-embedded$", "^go$", "^npx$", "^postcss$", "^asciidoctor$"]
-    osEnv = ["(?i)^((HTTPS?|NO)_PROXY|PATH(EXT)?|APPDATA|TE?MP|TERM)$"]
-  [security.funcs]
-    getenv = "^HUGO_"
-  # http:
-  #   methods:
-  #   - (?i)GET|POST
-  #   urls:
-  #   - .*
-
-# [languages]
-#   [languages.zh-cn]
-#     baseURL = "https://rhanqtl.github.io/"
-#     weight = 1
-#   [languages.en]
-#     baseURL = "https://rhanqtl.github.io/en/"
-#     weight = 2
-
-# [[languages.zh-cn.menu.main]]
-#   name = "原创博文"
-#   weight = 1
-#   url  = "posts/"
-# [[languages.zh-cn.menu.main]]
-#   name = "翻译"
-#   weight = 2
-#   url  = "translations/"
-# [[languages.zh-cn.menu.main]]
-#   name = "喜欢的诗歌"
-#   weight = 3
-#   url  = "poems/"
-# [[languages.zh-cn.menu.main]]
-#   name = "作品"
-#   weight = 4
-#   url  = "projects/"
-# [[languages.zh-cn.menu.main]]
-#   name = "关于我"
-#   weight = 5
-#   url  = "about/"
-
-# [[languages.en.menu.main]]
-#   name = "Posts"
-#   weight = 1
-#   url  = "posts/"
-# [[languages.en.menu.main]]
-#   name = "Liked Poems"
-#   weight = 2
-#   url  = "poems/"
-# [[languages.en.menu.main]]
-#   name = "Projects"
-#   weight = 3
-#   url  = "projects/"
-# [[languages.en.menu.main]]
-#   name = "About"
-#   weight = 4
-#   url  = "about/"
-
-[[menu.main]]
-  name = "原创博文"
-  weight = 1
-  url  = "posts/"
-[[menu.main]]
-  name = "翻译"
-  weight = 2
-  url  = "translations/"
-[[menu.main]]
-  name = "喜欢的诗歌"
-  weight = 3
-  url  = "poems/"
-[[menu.main]]
-  name = "作品"
-  weight = 4
-  url  = "projects/"
-[[menu.main]]
-  name = "关于我"
-  weight = 5
-  url  = "about/"
 
 [params]
-  author    = "rhanqtl"
-  description = "rhanqtl 的个人网站"
-  keywords  = "blog,developer,personal,博客,开发者,个人网站"
-  avatarURL = "images/avatar.jpg"
-  # gravatar  = "images/avatar.jpg"
-  customCSS = ["css/molokai.css","css/custom.css"]
-
-  show_reading_time = true
-
-[[params.social]]
-  name = "GitHub"
-  icon = "fa fa-github fa-2x"
-  url = "https://github.com/rhanqtl/"
-[[params.social]]
-  name = "Twitter"
-  icon = "fa fa-twitter fa-2x"
-  url = "https://twitter.com/rhanqtl/"
-[[params.social]]
-  name = "RSS"
-  icon = "fa fa-rss fa-2x"
-  url = "https://blog.rhanqtl.com/sitemap.xml"
-  rel = "alternate"
-  type = "application/rss+xml"
-
-[taxonomies]
-  category = "categories"
-  series   = "series"
-  tag      = "tags"
-  author   = "authors"
-
-[sitemap]
-  changefreq = 'weekly'
-  filename = 'sitemap.xml'
-  priority = 0.5
+  copyright = "rhanqtl"
+  [params.ui]
+    sidebar_search_disable = false
+    [params.ui.readingtime]
+    enable = true
+    [params.links]
+      # End user relevant links. These will show up on left side of footer and in the community page if you have one.
+      [[params.links.user]]
+        name = "E-mail"
+        url = "mailto:my@rhanqtl.com"
+        icon = "fa fa-envelope"
+      [[params.links.user]]
+        name = "GitHub"
+        url = "https:/github.com/rhanqtl"
+        icon = "fab fa-github"
+        # desc = ""
+      [[params.links.user]]
+        name = "Twitter"
+        url = "https://twitter.com/rhanqtl"
+        icon = "fab fa-twitter"
+        # desc = "Follow us on Twitter to get the latest news!"

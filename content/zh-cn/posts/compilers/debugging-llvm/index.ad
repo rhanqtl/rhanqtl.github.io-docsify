@@ -1,0 +1,50 @@
+---
+title: "LLVM 调试技巧"
+date: 2023-03-16T16:17:11+08:00
+tags: []
+summary: \-
+
+draft: true
+---
+
+NOTE: 请先参阅 link:{{< ref "/posts/c++-dev-setup-with-vscode" >}}[$$C++$$ 开发环境搭建] 和 link:{{< ref "/posts/compilers/llvm-dev-env-setup" >}}[LLVM 开发环境搭建]搭建开发环境。
+
+== `Value::dump`
+
+任何继承自 `Value` 的类都可以使用 `dump` 打印内容。例如，打印一个 `Function` 的内容：
+
+[source,plaintext]
+----
+(lldb) print F.dump()
+; Function Attrs: noinline nounwind sspstrong uwtable
+define dso_local i32 @foo(i32 noundef %n) #0 {
+entry:
+  br label %for.cond
+
+for.cond:                                         ; preds = %for.inc, %entry
+  %sum.0 = phi i32 [ 0, %entry ], [ %add, %for.inc ]
+  %i.0 = phi i32 [ 0, %entry ], [ %inc, %for.inc ]
+  %cmp = icmp slt i32 %i.0, %n
+  br i1 %cmp, label %for.body, label %for.end
+
+for.body:                                         ; preds = %for.cond
+  %add = add nsw i32 %sum.0, %i.0
+  br label %for.inc
+
+for.inc:                                          ; preds = %for.body
+  %inc = add nsw i32 %i.0, 1
+  br label %for.cond, !llvm.loop !6
+
+for.end:                                          ; preds = %for.cond
+  ret i32 %sum.0
+}
+----
+
+`Value::getName` 也很有用
+
+
+[bibliography]
+== 参考
+
+. [[[bib:gdb-to-lldb-cmd-map]]]https://lldb.llvm.org/use/map.html
+. http://bholt.org/posts/llvm-debugging.html

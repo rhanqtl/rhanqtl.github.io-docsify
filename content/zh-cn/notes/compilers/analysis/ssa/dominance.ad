@@ -1,0 +1,5 @@
+= Dominance Properties
+
+== Dominate
+
+在 CFG 中，顶点 n1 dominate 顶点 n2 意味着：从 entry 块到 BB n2 的每一条路径上都有

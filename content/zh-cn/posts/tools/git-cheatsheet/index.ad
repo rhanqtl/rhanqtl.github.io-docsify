@@ -1,0 +1,29 @@
+---
+title: "Git 不常用命令速查（持续更新）"
+date: 2023-03-17T20:19:57+08:00
+tags: ["Git"]
+summary: \-
+
+draft: false
+---
+
+== 历史记录
+
+=== 某一行相关的变更
+
+`git log -L_start_,_end_:_file_`
+
+其中 `start` 和 `end` 可以是：
+
+* 绝对数值
+* 正则表达式（表示第一个匹配的行）
+* 偏移量 `(+|-)_offset_`
+
+https://stackoverflow.com/questions/50469927/view-git-history-of-specific-line
+
+例如：
+
+[source,bash]
+----
+git log -L720,+3:'lib/Transforms/Utils/PromoteMemoryToRegister.cpp'
+----

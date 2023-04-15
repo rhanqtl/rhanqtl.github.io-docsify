@@ -1,0 +1,28 @@
+---
+title: "南京大学 Static Program Analysis PA 复盘"
+date: 2023-03-30T09:54:41+08:00
+tags: ["静态程序分析"]
+summary: \-
+
+draft: true
+---
+
+# 前言
+
+现存的一些知名静态程序分析课程或材料（例如 Static Program Analysis、CMU 的 Program Analysis 和 Principles of Program Analysis）都引入了形式化的方法描述静态分析，这对于一个几乎没有这方面经验的软件工程专业毕业生来说是比较难以接受的，而南京大学两位老师的这门课就很好地解决了这个痛点。
+
+没有代码，只有大致的思路。
+
+# IR 的结构
+
+有些时候因为对 IR 整体结构不了解，会忽略一些情况。下面是 IR 的整体结构：
+
+# Java 的语义
+
+有些情况下 PA 的描述中写的并不是非常清楚，我们就需要看 Java 的 Language Specification 来得到确定的信息，指路：
+
+1. 整数类型
+
+# 推荐工具
+
+* [在线 GraphViz 编辑 + 预览](https://dreampuf.github.io/GraphvizOnline/)

@@ -1,0 +1,27 @@
+---
+title: "C2: 现代语法的 C"
+date: 2023-04-12T10:00:43+08:00
+tags: []
+summary: \-
+
+draft: true
+---
+
+定义结构体：
+
+```plaintext
+struct X {
+    i: int;
+    d: double;
+};
+
+struct {
+    buf: [32]char;
+} obj;
+```
+
+定义函数：
+
+```plaintext
+func do_stuff(recv: *X)
+```

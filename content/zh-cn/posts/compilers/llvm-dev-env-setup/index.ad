@@ -1,0 +1,28 @@
+---
+title: "LLVM 开发环境搭建"
+date: 2023-03-16T09:49:59+08:00
+tags: ["编译器", "LLVM"]
+summary: \-
+
+draft: true
+---
+
+.调试 LLVM Pass
+****
+[source,plaintext]
+----
+$ gdb build/bin/opt
+(gdb) b llvm::PassManager::run
+(gdb) run -passes=mem2reg -S -o /path/to/output.ll /path/to/input.ll
+(gdb) b llvm::PromotePass::run
+(gdb) disable 1
+(gdb) c
+(gdb) layout src
+(gdb) focus cmd
+----
+****
+
+[bibliography]
+== 参考
+
+. https://sourceware.org/gdb/onlinedocs/gdb/TUI-Commands.html[TUI-specific Commands - Debugging with GDB]

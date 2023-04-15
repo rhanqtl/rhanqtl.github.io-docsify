@@ -1,0 +1,17 @@
+---
+title: "第 3 讲：构建系统、测试和调试"
+date: 2023-04-15
+draft: true
+---
+
+== 构建系统
+
+=== GNU Make
+
+=== CMake
+
+CMake 很丑，但是几乎是事实标准！
+
+=== 包管理
+
+C++ 的包管理比较恼人，一般是通过平台本身的包管理工具实现，例如 Arch Linux 的 pacman、MacOS 的 Homebrew

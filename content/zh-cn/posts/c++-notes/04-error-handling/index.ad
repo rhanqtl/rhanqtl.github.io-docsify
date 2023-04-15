@@ -1,0 +1,30 @@
+---
+title: "第 4 讲：错误处理"
+date: 2023-04-15
+draft: true
+---
+
+== 错误码
+
+错误码也有多种形式：
+
+* 返回值专门用作错误码，包括使用 `int`、`std::error_code` 和 `llvm::Error`
+* 返回值“无效”的部分用作错误码，例如 `read` 正常情况下应该返回一个正数，但是当遇到 `EOF` 或者出错时分别返回 `0` 和负数，包括 `Expect<T>`
+
+== 异常
+
+=== 异常的性能
+
+尽管合法，但是异常的性能决定了它不适合作为控制流
+
+== 回调
+
+```c++
+void get_all(const vector<URL> &urls,
+             function<void(const Response &)> cb,
+             function<void(const ErrorInfo &)> err_cb) {
+    for (const auto &u : urls) {
+        Response resp = http_client.get(u.str());
+    }
+}
+```
