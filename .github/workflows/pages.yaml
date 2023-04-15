@@ -16,7 +16,8 @@ jobs:
       - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.6'
-      - run: gem install asciidoctor asciidoctor-diagram asciidoctor-rouge
+      - run: gem install asciidoctor asciidoctor-diagram asciidoctor-rouge asciidoctor-bibtex asciimath
+      - run: npm install autoprefixer postcss-cli postcss
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
