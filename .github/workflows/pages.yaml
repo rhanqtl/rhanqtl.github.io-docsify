@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.6'
-      - run: gem install asciidoctor asciidoctor-diagram
+      - run: gem install asciidoctor asciidoctor-diagram asciidoctor-rouge
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
