@@ -1,0 +1,282 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rhanqtl – type-system</title>
+    <link>/tags/type-system/</link>
+    <description>Recent content in type-system on rhanqtl</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 17 Apr 2023 19:06:19 +0800</lastBuildDate>
+    
+	  <atom:link href="/tags/type-system/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Posts: Go 和 Duck Typing</title>
+      <link>/posts/golang-and-duck-typing/</link>
+      <pubDate>Mon, 17 Apr 2023 19:06:19 +0800</pubDate>
+      
+      <guid>/posts/golang-and-duck-typing/</guid>
+      <description>
+        
+        
+        &lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_引言&#34;&gt;引言&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;今天在 B 站看到了一个视频&lt;a href=&#34;https://www.bilibili.com/video/BV1hM411K7Ly/?spm_id_from=333.337.search-card.all.click&amp;amp;vd_source=0e475310ef35ea2dd6d69a579f7c5d6b&#34;&gt;《为什么说 Go 是鸭子类型？》&lt;/a&gt;，觉得错得很离谱，在这里梳理一下 duck typing 和 structural typing。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_duck_typing_是什么&#34;&gt;duck typing 是什么&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;关于 duck typing，最常听到的一句话大概就是“如果它走起来像鸭子、叫起来像鸭子，那么它一定就是鸭子”，这就是所谓的“鸭子测试”（duck test）。但是这句话并没有涵盖 duck typing 的全部方面，至少没有说测试到底是在什么时候进行——编译期还是运行期（虽然维基百科参考的是 Python 的官方文档，但是这并不能推断出 duck typing 只能出现在动态语言中）。&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;quoteblock&#34;&gt;
+&lt;blockquote&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;Duck test: If it walks like a duck and it quacks like a duck, then it must be a duck.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/blockquote&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;维基百科上写道：“在 duck typing 中，如果一个对象具有某类型所要求的所有方法和属性，则该对象属于该类型。duck typing 可以看作是给定对象和类型要求之间基于使用的结构等价。有关结构类型等价的进一步解释，请参阅 structural typing。”&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;quoteblock&#34;&gt;
+&lt;blockquote&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;In duck typing, an object is of a given type if it has all methods and properties required by that type. Duck typing can be viewed as a usage-based structural equivalence between a given object and the requirements of a type. See structural typing for a further explanation of structural type equivalence.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/blockquote&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;duck typing 是运行期检查的，而且只检查用到的部分。例如：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;# interface
+&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;IFoo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;:&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #999999&#34;&gt;self&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;pass&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;A&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;IFoo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #999999&#34;&gt;self&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+        &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;print&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;__name__&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;:&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #999999&#34;&gt;self&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+        &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;print&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;__name__&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;call_foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt;
+
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;call_foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;())&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;call_foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;())&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;Go 实现的等价代码会表现出类似的行为，但是这里的测试并不全面——&lt;code&gt;IFoo&lt;/code&gt; 仅有一个方法，如果扩展到两个方法的情况，Go 就跟 Python 不一样了：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;go&#34;&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;main&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #d14&#34;&gt;&amp;#34;io&amp;#34;&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;struct&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Read&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;buf&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;[]&lt;/span&gt;&lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;byte&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;n&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;error&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #009999&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #008080&#34;&gt;nil&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// func (a A) Close() error {&lt;/span&gt;
+&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// 	return nil&lt;/span&gt;
+&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// }&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;main&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;var&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;rc&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;io&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;ReadCloser&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;data&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #0086B3&#34;&gt;make&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;([]&lt;/span&gt;&lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;byte&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #009999&#34;&gt;16&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;rc&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Read&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;data&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;使用 Go 1.20，这段代码报错如下：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;plaintext&#34;&gt;cannot use a (variable of type A) as io.ReadCloser value in argument to foo: A does not implement io.ReadCloser (missing method Close)&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;看，哪怕实际上仅仅用到了 &lt;code&gt;Read&lt;/code&gt;，编译器也要求 &lt;code&gt;rc&lt;/code&gt; 所指向的 struct 实例必须实现 &lt;code&gt;Close&lt;/code&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;另外，在 Python 中，即使函数签名并不一致，只要名字存在并且参数数量能够匹配，即使方法签名不相同，依然能够运行：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;A&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;:&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #999999&#34;&gt;self&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+        &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;print&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;:&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #999999&#34;&gt;self&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;y&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;args&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+        &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;print&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;y&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;args&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color: #990000;font-weight: bold&#34;&gt;qux&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;it&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;):&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;it&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #009999&#34;&gt;42&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #009999&#34;&gt;3.14&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;qux&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;())&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;qux&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;())&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;但是 Go 是不行的：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;go&#34;&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;main&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Speaker&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;interface&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Speak&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;struct&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Speak&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;words&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;...&lt;/span&gt;&lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;string&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;_&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;w&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;range&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;words&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+		&lt;span style=&#34;color: #0086B3&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;w&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;main&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;var&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;A&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Speak&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// OK&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;a&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// Error&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;foo&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Speaker&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;s&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Speak&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_structural_typing&#34;&gt;Structural typing&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;Go 的类型系统使用的是 structural typing。根据维基百科的说法：“结构类型系统（或基于属性的类型系统）是类型系统的一个主要类别，其中类型兼容性和等价性由类型的实际结构或定义决定，而不是由其他特征（例如名称或声明位置）决定。”Java 就是典型的基于名称的类型系统。&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;quoteblock&#34;&gt;
+&lt;blockquote&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;A structural type system (or property-based type system) is a major class of type systems in which type compatibility and equivalence are determined by the type’s actual structure or definition and not by other characteristics such as its name or place of declaration.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/blockquote&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;structural typing 用于静态类型系统。&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;C++ 的模板使用的也是 structural typing。&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;structural typing 一个显著的好处是不再需要使用侵入式的声明（像 Java 那样 &lt;code&gt;implements Xxx&lt;/code&gt;），可以达到更灵活的效果，这一点在 Go 中展现的淋漓尽致——任何实现了（哪怕是碰巧）接口 &lt;code&gt;I&lt;/code&gt; 的所有方法的 struct 实例都能作为 &lt;code&gt;I&lt;/code&gt; 使用，这样为了扩展现有的类，可以不用创建新类型。例如想要 mock 标准库中的 &lt;code&gt;http.Client&lt;/code&gt;，可以创建一个接口：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;go&#34;&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Getter&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;interface&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Get&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;url&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;string&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;http&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Response&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;error&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;这样 &lt;code&gt;http.Client&lt;/code&gt; 就可以直接作为 &lt;code&gt;Getter&lt;/code&gt; 的实例使用：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;go&#34;&gt;&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// foo.go&lt;/span&gt;
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #d14&#34;&gt;&amp;#34;net/http&amp;#34;&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;printHomepage&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;c&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Getter&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;resp&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;c&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Get&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #d14&#34;&gt;&amp;#34;https://google.com&amp;#34;&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #008080&#34;&gt;nil&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// ... do some error handling&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// use resp&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;AlwaysFail&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;struct&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;AlwaysFail&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Get&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;_&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;string&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;http&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Response&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #445588;font-weight: bold&#34;&gt;error&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #008080&#34;&gt;nil&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;errors&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;New&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #d14&#34;&gt;&amp;#34;!&amp;#34;&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// foo_test.go&lt;/span&gt;
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Test_printHomepage&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;t&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;T&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;printHomepage&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;AlwaysFail&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{})&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;如果在 Java 中，这就需要 &lt;code&gt;extends&lt;/code&gt; 现有的 &lt;code&gt;HttpClient&lt;/code&gt;，然后 override &lt;code&gt;get&lt;/code&gt; 方法；如果 &lt;code&gt;HttpClient&lt;/code&gt; 是 &lt;code&gt;final&lt;/code&gt; 的或者 &lt;code&gt;get&lt;/code&gt; 是 &lt;code&gt;final&lt;/code&gt; 的，就不得不创建新接口和包装类型。&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;但是这种灵活性也是双刃剑——两个结构相同但是完全没有逻辑关系的类型会被类型系统认为是一样的。实现 Java 那样的标记接口（例如 &lt;code&gt;Cloneable&lt;/code&gt;）比较麻烦，Go 的 parser 中就有典型的例子，为了区分 &lt;code&gt;Stmt&lt;/code&gt; 和 &lt;code&gt;Expr&lt;/code&gt;，两个接口必须各自带一个不同名的空方法（初学的时候，我确实是有点震惊）：&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;listingblock&#34;&gt;
+&lt;div class=&#34;content&#34;&gt;
+&lt;pre class=&#34;rouge highlight&#34; style=&#34;background-color: #f8f8f8&#34;&gt;&lt;code data-lang=&#34;go&#34;&gt;&lt;span style=&#34;color: #999988;font-style: italic&#34;&gt;// 注意两个方法的首字母都是小写的，意味着不能被外部调用&lt;/span&gt;
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Stmt&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;interface&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;stmtNode&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;
+
+&lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;Expr&lt;/span&gt; &lt;span style=&#34;color: #000000;font-weight: bold&#34;&gt;interface&lt;/span&gt; &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;background-color: #f8f8f8&#34;&gt;exprNode&lt;/span&gt;&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;()&lt;/span&gt;
+&lt;span style=&#34;background-color: #f8f8f8&#34;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_结论&#34;&gt;结论&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;科普确实是很需要水平的工作，既需要作者对传播的知识有深刻、准确的理解，又需要作者能够用简明易懂的语言讲出来。&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;paragraph&#34;&gt;
+&lt;p&gt;这已经是我第二次在 B 站上怼所谓的“科普”up 主了，如果 CS 相关内容是这样的话，想来其他领域也多多少少会有这种现象。强烈建议 B 站的知识区引入同行评审机制。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;sect1&#34;&gt;
+&lt;h2 id=&#34;_参考&#34;&gt;参考&lt;/h2&gt;
+&lt;div class=&#34;sectionbody&#34;&gt;
+&lt;div class=&#34;olist arabic&#34;&gt;
+&lt;ol class=&#34;arabic&#34;&gt;
+&lt;li&gt;
+&lt;p&gt;Duck typing - Wikipedia: &lt;a href=&#34;https://en.wikipedia.org/wiki/Duck_typing&#34; class=&#34;bare&#34;&gt;https://en.wikipedia.org/wiki/Duck_typing&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Structural typing - Wikipedia: &lt;a href=&#34;https://en.wikipedia.org/wiki/Structural_type_system&#34; class=&#34;bare&#34;&gt;https://en.wikipedia.org/wiki/Structural_type_system&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

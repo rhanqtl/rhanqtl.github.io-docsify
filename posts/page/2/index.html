@@ -80,7 +80,9 @@
     <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-poststools-li">
   <a href="/posts/tools/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-poststools"><span class="">工具</span></a>
   <ul class="ul-2 foldable">
-    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-poststoolsmigrating-from-coder-to-docsy-li">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-poststoolscommand-line-roadmap-li">
+  <a href="/posts/tools/command-line-roadmap/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-poststoolscommand-line-roadmap"><span class="">Linux 命令行操作学习路线图</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-poststoolsmigrating-from-coder-to-docsy-li">
   <a href="/posts/tools/migrating-from-coder-to-docsy/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-poststoolsmigrating-from-coder-to-docsy"><span class="">博客主题迁移：从 Coder 到 Docsy</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-poststoolsvscode-shortcut-cheatsheet-li">
   <a href="/posts/tools/vscode-shortcut-cheatsheet/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-poststoolsvscode-shortcut-cheatsheet"><span class="">VS Code 快捷键速查表</span></a>
@@ -116,6 +118,8 @@
   </ul>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-postsc-notes-li">
   <a href="/posts/c&#43;&#43;-notes/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-postsc-notes"><span class="">C&#43;&#43; 程序设计笔记</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-postsgolang-and-duck-typing-li">
+  <a href="/posts/golang-and-duck-typing/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-postsgolang-and-duck-typing"><span class="">Go 和 Duck Typing</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-postssieve-of-eratosthenes-li">
   <a href="/posts/sieve-of-eratosthenes/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-postssieve-of-eratosthenes"><span class="">埃氏筛法及其实现</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-postshow-to-launch-apps-from-web-browsers-li">
@@ -174,6 +178,8 @@
         
           <li><a class="taxonomy-term" href="/tags/git/" data-taxonomy-term="git"><span class="taxonomy-label">Git</span><span class="taxonomy-count">1</span></a></li>
         
+          <li><a class="taxonomy-term" href="/tags/golang/" data-taxonomy-term="golang"><span class="taxonomy-label">golang</span><span class="taxonomy-count">1</span></a></li>
+        
           <li><a class="taxonomy-term" href="/tags/hugo/" data-taxonomy-term="hugo"><span class="taxonomy-label">Hugo</span><span class="taxonomy-count">1</span></a></li>
         
           <li><a class="taxonomy-term" href="/tags/lex/" data-taxonomy-term="lex"><span class="taxonomy-label">Lex</span><span class="taxonomy-count">1</span></a></li>
@@ -181,6 +187,8 @@
           <li><a class="taxonomy-term" href="/tags/llvm/" data-taxonomy-term="llvm"><span class="taxonomy-label">LLVM</span><span class="taxonomy-count">2</span></a></li>
         
           <li><a class="taxonomy-term" href="/tags/ssa/" data-taxonomy-term="ssa"><span class="taxonomy-label">SSA</span><span class="taxonomy-count">1</span></a></li>
+        
+          <li><a class="taxonomy-term" href="/tags/type-system/" data-taxonomy-term="type-system"><span class="taxonomy-label">type-system</span><span class="taxonomy-count">1</span></a></li>
         
           <li><a class="taxonomy-term" href="/tags/vs-code/" data-taxonomy-term="vs-code"><span class="taxonomy-label">VS Code</span><span class="taxonomy-count">2</span></a></li>
         
@@ -219,6 +227,99 @@
 			
 			<h2>张贴在 2023</h2>
 			<ul class="list-unstyled mt-4">
+				
+				<li class="media mb-4">
+					<div class="media-body">
+						<h5 class="mt-0 mb-1"><a href="/posts/compilers/tips/construct-lists-in-bison/">在 Bison 中如何构造列表</a></h5>
+						<p class="mb-2 mb-md-3"><small class="text-muted">Saturday, February 11, 2023 在 编译技术</small></p>
+						<header class="article-meta">
+							
+
+  
+    
+
+
+  
+    
+
+
+<div class="taxonomy taxonomy-terms-article taxo-tags">
+  <h5 class="taxonomy-title">Tags:</h5>
+  <ul class="taxonomy-terms">
+    
+      <li><a class="taxonomy-term" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" data-taxonomy-term="%E7%BC%96%E8%AF%91%E5%99%A8"><span class="taxonomy-label">编译器</span></a></li>
+    
+      <li><a class="taxonomy-term" href="/tags/bison/" data-taxonomy-term="bison"><span class="taxonomy-label">Bison</span></a></li>
+    
+  </ul>
+</div>
+
+  
+
+							
+								<p class="reading-time"><i class="fa-solid fa-clock" aria-hidden="true"></i>&nbsp; 2 分钟阅读 &nbsp;</p>
+
+							
+						</header>
+						
+
+
+
+
+
+						<p class="pt-0 mt-0">前言 生成 AST 时免不了处理列表（例如，函数调用的参数）：
+struct Expr {}; struct CallExpr : public Expr { std::shared_ptr&lt;Expr&gt; fn; std::vector&lt;std::shared_ptr&lt;Expr&gt;&gt; args; }; 如果是手写 parser，可以这样：
+// assume that &#39;(&#39; is consumed until current token is …</p>
+						<p class="pt-0"><a href="/posts/compilers/tips/construct-lists-in-bison/" aria-label="更多 - 在 Bison 中如何构造列表">更多</a></p>
+					</div>
+				</li>
+				
+				<li class="media mb-4">
+					<div class="media-body">
+						<h5 class="mt-0 mb-1"><a href="/posts/compilers/tips/lexical-tie-ins/">Bison 小技巧：tie-in</a></h5>
+						<p class="mb-2 mb-md-3"><small class="text-muted">Friday, February 10, 2023 在 编译技术</small></p>
+						<header class="article-meta">
+							
+
+  
+    
+
+
+  
+    
+
+
+<div class="taxonomy taxonomy-terms-article taxo-tags">
+  <h5 class="taxonomy-title">Tags:</h5>
+  <ul class="taxonomy-terms">
+    
+      <li><a class="taxonomy-term" href="/tags/%E7%BC%96%E8%AF%91%E5%99%A8/" data-taxonomy-term="%E7%BC%96%E8%AF%91%E5%99%A8"><span class="taxonomy-label">编译器</span></a></li>
+    
+      <li><a class="taxonomy-term" href="/tags/bison/" data-taxonomy-term="bison"><span class="taxonomy-label">Bison</span></a></li>
+    
+  </ul>
+</div>
+
+  
+
+							
+								<p class="reading-time"><i class="fa-solid fa-clock" aria-hidden="true"></i>&nbsp; 少于1分钟 &nbsp;</p>
+
+							
+						</header>
+						
+
+
+
+
+
+						<p class="pt-0 mt-0">前言 实现 C++ 编译器时，有一个比较恼人的点是嵌套模板的使用：
+vector&lt;vector&lt;int&gt;&gt; 在 c++11 以前，必须在两个 &lt; 之间插入空白符1：
+vector&lt;vector&lt;int&gt; &gt; 因为 &gt;&gt; 会默认被解析成右移运算符，这对于强迫症来说是难以接受的。C++11 给出的办法是，在存在尚未匹配的 &lt; 的情况下，如果遇到 &gt;&gt;，则将其拆分为 &gt;.
+Tie-in …</p>
+						<p class="pt-0"><a href="/posts/compilers/tips/lexical-tie-ins/" aria-label="更多 - Bison 小技巧：tie-in">更多</a></p>
+					</div>
+				</li>
 				
 				<li class="media mb-4">
 					<div class="media-body">
