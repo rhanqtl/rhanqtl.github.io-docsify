@@ -1,0 +1,260 @@
+---
+title: "Linux 命令行操作学习路线图"
+date: 2023-05-06
+draft: false
+---
+
+== 前言
+
+最近想要整理一下 Linux 下命令行操作的相关知识，于是翻看了吃灰许久的 <<the-art-of-command-line>>，发现这份文档虽然比较全，但是不成体系，甚至可以说有些混乱。因此，我参照这份文档结合自己的学习经历，整理了一份命令行操作学习路线图。
+
+[NOTE]
+====
+在所有涉及到快捷键的地方，我们使用如下的约定：
+
+* `C` 表示 `Ctrl`，`S` 表示 `Shift`，`A` 表示 `Alt`，`T` 表示 `Tab`
+* 字母一律用小写表示
+* `←` `→` `↑` `↓` 分别表示对应的方向键
+* `<X>-<Y>` 表示同时按 `<X>` 和 `<Y>` 两个键，`<X>-<Y>-<Z>` 表示同时按 `<X>`、`<Y>` 和 `<Z>` 三个键
+* `<X> <Y>` 表示先按 `<X>` 再按 `<Y>`
+====
+
+== 基础
+
+=== Bash
+
+`Bash` 应该是如今 Linux 下 shell 的事实标准，是学习 Linux 命令行操作的基石。
+
+主要参考 `man bash` 和 <<gnu-bash-manual>>，至少应该了解如下内容：
+
+* Quoting：`\` `'` 和 `"`
+* 标准 I/O、管道（`|`）和 I/O 重定向（`<` `>` `>>`）
+* 内置命令 `cd` `pushd` `popd` `dirs` `alias` `type` `help` `history` `time`
+* 通配符 `*` `?` `[]` `{}`
+* 了解命令行的 link:https://wiki.debian.org/CommonErrorMessages/ArgumentListTooLong[128K 限制]。使用通配符匹配大量文件名时，常会遇到“Argument list too long”的错误信息，这种情况下换用 `find` 或 `xargs` 通常可以解决
+* 各种扩展（expansion）和替换（substitution）
+* 自动变量，`HOME` `PWD` `PATH`
+* 环境变量 `export` `unset`
+* here-doc
+* 使用 `set` 设置选项，例如 `-x` `-e` `-u` `-o`
+    ** `set -o emacs`/`set -o vi` 可以将快捷键设置成 Emacs（默认）或 Vi 模式
+* 控制流结构 `if` `while` `until` `case` `select`
+* 清屏 `clear`
+
+=== 文本处理
+
+* Vim（`vi`/`vim`），尽管 Emacs 很强大，但是很多服务器会至少预装 `vi`
+* 正则表达式
+* 常用的命令：`sort` `uniq` `comm` `diff` `head` `tail` `less` `more` `grep` `sed` `awk` `tr` `cut` `paste` `join` `wc` `shuf` `patch` `diffstat` `vimdiff` `strings`
+
+=== 系统管理
+
+* 日常使用的发行版的包管理器
+* 进程管理 `&`，`C-z`，`C-c`，`jobs`，`fg`，`bg`，`disown` `ps` `kill` `nohup` `pstree` `pgrep` `pkill` `timeout`
+* 文件系统管理：`ls` `cp` `mv` `ln` `chmod` `chown` `df` `du` `mount` `stat` `find` `locate` `updatedb` `tar` `zip` `rsync` `scp` `dd` `tree` `chattr` `fdisk` `mkfs` `split` `csplit` `getfacl` `setfacl` `truncate` `fallocate` `watch` `file`
+* 设备管理 `lsblk` `lshw`，`lscpu`，`lspci`，`lsusb`
+* 网络管理 `netstat`/`ss` `ping` `nslookup`/`dig` `lsof` `ip` `ifconfig` `traceroute` `nc` `hostname`
+* `xargs` `tee` `pv` `xxd`
+* `uptime` `w`
+* `top`/`htop` `sysstat` 工具包（包括 `iostat` `mpstat` `sar` 等；这个名字是 Arch Linux 下的，其他发行版可能会有出入）`vmstat` `free` `iotop` `dstat`
+* 用户管理 `id` `useradd` `su` `sudo`
+* `uname` `lsb_release`
+
+=== 其他
+
+* 查看文档：`man` `apropos` `help` `tldr`
+* 熟练使用 Google
+* 下载工具 `curl` 和 `wget`
+
+== 进阶
+
+=== Bash
+
+* 编写脚本（至少能够修改 `~/.bashrc`，把通用的配置持久化）
+      ** `trap` 命令
+* 快捷键
+
+.Bash 常用快捷键
+****
+* `T` 补全命令（应该没有比这个更常用的了）
+* `C-r` 反向搜索历史
+* `C-a` 跳到行首，`C-e` 跳到行尾
+    ** 如果你输了一般的命令，然后发现需要干点别的，可以 `C-A` 跳到行首，`#` 加上注释，然后 `C-e` 跳到行尾，然后 `Enter`，后面可以通过方向键或者 `C-r` 找回来完成
+* 使用 `C-x` `C-e` 编辑长命令（可能需要配置 `EDITOR` 环境变量，例如 `export EDITOR=vim`）
+
+键入 `man readline` 可以查看 Bash 中的默认快捷键
+****
+
+=== 版本控制工具
+
+例如 Git，可以帮助你创建自己的 dot files 仓库，并在不同的设备上同步
+
+=== SSH
+
+* 登录到远程机器
+* 免密码登录 `ssh-agent` `ssh-add`
+* 端口转发
+* 配置文件的基本知识
+
+.SSH 调优
+****
+对 ssh 设置做一些小优化可能是很有用的，例如这个 `~/.ssh/config` 文件包含了防止特定网络环境下连接断开、压缩数据、多通道等选项：
+[source,ssh]
+----
+TCPKeepAlive=yes
+ServerAliveInterval=15
+ServerAliveCountMax=6
+Compression=yes
+ControlMaster auto
+ControlPath /tmp/%r@%h:%p
+ControlPersist yes
+----
+
+一些其他的关于 ssh 的选项是与安全相关的，应当小心地使用。例如你应当只能在可信任的网络中启用 `StrictHostKeyChecking=no` 和 `ForwardAgent=yes`。
+****
+
+TIP: 考虑使用 link:https://mosh.mit.edu/[`mosh`] 作为 ssh 的替代品。它使用 UDP 协议，可以避免连接被中断并且对带宽需求更小，但它需要在服务端做相应的配置。
+
+=== 终端复用工具
+
+* `tmux`
+      ** 基本使用
+      ** 自定义配置
+
+=== 系统调试
+
+* `tcpdump`
+* `nc`/`netcat`
+* `strace`
+* `ldd`
+* `/proc` 文件系统，`/proc/cpuinfo`，`/proc/meminfo`，`/proc/cmdline`，`/proc/xxx/cwd`，`/proc/xxx/exe`，`/proc/xxx/fd/`，`/proc/xxx/smaps`（这里的 `xxx` 表示进程的 id 或 pid）
+* `dmesg`
+
+== 小贴士
+
+* 注意到语言设置（中文或英文等）对许多命令行工具有一些微妙的影响，比如排序的顺序和性能。大多数 Linux 的安装过程会将 `LANG` 或其他有关的变量设置为符合本地的设置。要意识到当你改变语言设置时，排序的结果可能会改变。明白国际化可能会使 sort 或其他命令运行效率下降*许多倍*。某些情况下（例如集合运算）你可以放心的使用 `export LC_ALL=C` 来忽略掉国际化并按照字节来判断顺序。
+
+* 如果你想在 Bash 命令行中写 tab 制表符，键入 `$'\t'`（有些文章宣称可以使用 `C-v T`，但是实测至少在 Windows Terminal 中无法使用）
+
+* 在 Bash 脚本中，子 shell（使用括号 `(...)`）是一种组织参数的便捷方式。一个常见的例子是临时地移动工作路径，代码如下：
++
+[source,bash]
+----
+# do something in current dir
+(cd /some/other/dir && other-command)
+# continue in original dir
+----
+
+* 编写脚本时，你可能会想要把代码都放在大括号里。缺少右括号的话，代码就会因为语法错误而无法执行。如果你的脚本是要放在网上分享供他人使用的，这样的写法就体现出它的好处了，因为这样可以防止下载不完全代码被执行。
++
+[source,bash]
+----
+{
+  # 在这里写代码
+}
+----
+
+* 通常，为了保证命令不会在标准输入里残留一个未关闭的文件句柄捆绑在你当前所在的终端上，在命令后添加 `< /dev/null` 是一个好习惯。
+* 使用 `man ascii` 查看具有十六进制和十进制值的ASCII表。`man unicode`，`man utf-8`，以及 `man latin1` 有助于你去了解通用的编码信息。
+*  获取八进制形式的文件访问权限（修改系统设置时通常需要，但 `ls` 的功能不那么好用并且通常会搞砸），可以使用类似如下的代码：
++
+```sh
+stat -c '%A %a %n' /etc/timezone
+```
+
+* 如果你删除了一个文件，但通过 `du` 发现没有释放预期的磁盘空间，请检查文件是否被进程占用：`lsof | grep deleted | grep "_/path/to/the/file_"`
+
+* 将 Web 服务器上当前目录下所有的文件（以及子目录）暴露给你所处网络的所有用户，使用：
+      ** Python 2：`python -m SimpleHTTPServer 7777`
+      ** Python 3：`python -m http.server 7777`
+* 当你需要一个基本的计算器时，可以使用 `python` 解释器、`awk` 或者 `bc`。例如：
++
+....
+$ python3
+>>> 2+3
+5
+>>> exit
+$ awk 'BEGIN { print 2+3; exit; }'
+5
+$ bc
+> 2 + 3
+5
+....
+
+* 使用 `zless`、`zmore`、`zcat` 和 `zgrep` 对压缩过的文件进行操作
+
+== One-liners
+
+参见 <<the-art-of-command-line>>
+
+== 额外工具
+
+* GNU Parallel
+
+* 使用 link:https://github.com/mooz/percol[`percol`] 或者 link:https://github.com/junegunn/fzf[`fzf`] 可以交互式地从另一个命令输出中选取值。
+
+* 使用 `fpp`（link:https://github.com/facebook/PathPicker[PathPicker]）可以与基于另一个命令（例如 `git`）输出的文件交互。
+
+* 使用 link:http://stedolan.github.io/jq/[`jq`] 处理 JSON。
+* 将 HTML 转为文本：`lynx -dump -stdin`。
+* Markdown，HTML，以及所有文档格式之间的转换，试试 link:http://pandoc.org/[`pandoc`]。
+* 当你要处理棘手的 XML 时候，`xmlstarlet` 算是上古时代流传下来的神器。
+* 使用 link:https://github.com/0k/shyaml[`shyaml`] 处理 YAML。
+* 要处理 Excel 或 CSV 文件的话，link:https://github.com/onyxfish/csvkit[csvkit] 提供了 `in2csv`，`csvcut`，`csvjoin`，`csvgrep` 等方便易用的工具。
+
+* 当你要处理 Amazon S3 相关的工作的时候，link:https://github.com/s3tools/s3cmd[`s3cmd`] 是一个很方便的工具而 link:https://github.com/bloomreach/s4cmd[`s4cmd`] 的效率更高。Amazon 官方提供的 link:https://github.com/aws/aws-cli[`aws`] 以及  link:https://github.com/donnemartin/saws[`saws`] 是其他 AWS 相关工作的基础，值得学习。
+
+* 要进行一些复杂的计算，比如分组、逆序和一些其他的统计分析，可以考虑使用 link:https://www.gnu.org/software/datamash/[`datamash`]。
+
+* 使用 link:https://github.com/jlevy/repren[`repren`] 来批量重命名文件，或是在多个文件中搜索替换内容。（有些时候 `rename` 命令也可以批量重命名，但要注意，它在不同 Linux 发行版中的功能并不完全一样。）
++
+[source,bash]
+----
+# 将文件、目录和内容全部重命名 foo -> bar:
+repren --full --preserve-case --from foo --to bar .
+# 还原所有备份文件 whatever.bak -> whatever:
+repren --renames --from '(.*)\.bak' --to '\1' *.bak
+# 用 rename 实现上述功能（若可用）:
+rename 's/\.bak$//' *.bak
+----
+
+* 制作二进制差分文件（Delta 压缩），使用 `xdelta3`。
+* 使用 `iconv` 更改文本编码。需要更高级的功能，可以使用 `uconv`，它支持一些高级的 Unicode 功能。例如，这条命令移除了所有重音符号：
++
+[source,bash]
+----
+uconv -f utf-8 -t utf-8 -x '::Any-Lower; ::Any-NFD; [:Nonspacing Mark:] >; ::Any-NFC; ' < input.txt > output.txt
+----
+
+* 操作日期和时间表达式，可以用 link:http://www.fresse.org/dateutils/[`dateutils`] 中的 `dateadd`、`datediff`、`strptime` 等工具。
+
+* 若要对系统有一个深度的总体认识，使用 link:https://github.com/nicolargo/glances[`glances`]，它会在一个终端窗口中向你提供一些系统级的数据。
+
+* 使用 link:http://www.bitwizard.nl/mtr/[`mtr`] 去跟踪路由，用于确定网络问题。
+
+* 用 link:https://dev.yorhel.nl/ncdu[`ncdu`] 来查看磁盘使用情况，它比寻常的命令，如 `du -sh *`，更节省时间。
+
+* 查找正在使用带宽的套接字连接或进程，使用 link:http://www.ex-parrot.com/~pdw/iftop/[`iftop`] 或 link:https://github.com/raboof/nethogs[`nethogs`]。
+
+
+- link:https://wireshark.org/[`wireshark`]，link:https://www.wireshark.org/docs/wsug_html_chunked/AppToolstshark.html[`tshark`] 和 link:http://ngrep.sourceforge.net/[`ngrep`] 可用于复杂的网络调试。
+
+* 了解 `strace` 和 `ltrace`。这俩工具在你的程序运行失败、挂起甚至崩溃，而你却不知道为什么或你想对性能有个总体的认识的时候是非常有用的。注意 profile 参数（`-c`）和附加到一个运行的进程参数 （`-p`）。
+
+* 当调试一些之前出现的问题的时候，link:http://sebastien.godard.pagesperso-orange.fr/[`sar`] 非常有用。它展示了 cpu、内存以及网络等的历史数据。
+
+* 关于更深层次的系统分析以及性能分析，看看 `stap`（link:https://sourceware.org/systemtap/wiki[SystemTap]），link:https://en.wikipedia.org/wiki/Perf_(Linux[`perf`])，以及link:https://github.com/draios/sysdig[`sysdig`]。
+
+* `ab` 工具（Apache 中自带）可以简单粗暴地检查 web 服务器的性能。对于更复杂的负载测试，使用 `siege`。
+
+此外参见 <<the-art-of-command-line>> 的“冷门但有用”一节
+
+[bibliography]
+== 参考
+
+* [[[the-art-of-command-line,The Art of Command Line]]] https://github.com/jlevy/the-art-of-command-line
+* [[[less-vs-tail,less +F vs. tail -f]]] link:https://unix.stackexchange.com/questions/193620/is-tail-f-more-efficient-than-less-f[这篇文章]和link:https://www.linux.com/training-tutorials/tail-f-vs-less-f/[这篇文章]，总结一下，`tail -f` 和 `less +F` 都能够实现查看新数据的功能，主要的区别在于（1）`tail` 相对于 `less` 使用更少的内存，而且实时性更好（`tail` 通常使用 OS 的通知机制，而 `less` 一般是轮询），（2）`less` 可以支持随时暂停/恢复追加并且回退搜索
+* https://www.grymoire.com/Unix/index.html 是不错的学习资源
+* [[[gnu-bash-manual,GNU Bash 手册]]] link:https://www.gnu.org/software/bash/manual/[GNU Bash Manual]
+* [[[explainshell]]] https://explainshell.com/ 解释 Shell 命令的功能
+* [[[regexr]]] https://regexr.com/ 在线正则表达式工具

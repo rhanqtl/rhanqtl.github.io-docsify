@@ -1,0 +1,196 @@
+---
+title: "Go 和 Duck Typing"
+date: 2023-04-17T19:06:19+08:00
+tags: ["golang", "type-system"]
+draft: false
+---
+
+== 引言
+
+今天在 B 站看到了一个视频link:https://www.bilibili.com/video/BV1hM411K7Ly/?spm_id_from=333.337.search-card.all.click&vd_source=0e475310ef35ea2dd6d69a579f7c5d6b[《为什么说 Go 是鸭子类型？》]，觉得错得很离谱，在这里梳理一下 duck typing 和 structural typing。
+
+== duck typing 是什么
+
+关于 duck typing，最常听到的一句话大概就是“如果它走起来像鸭子、叫起来像鸭子，那么它一定就是鸭子”，这就是所谓的“鸭子测试”（duck test）。但是这句话并没有涵盖 duck typing 的全部方面，至少没有说测试到底是在什么时候进行——编译期还是运行期（虽然维基百科参考的是 Python 的官方文档，但是这并不能推断出 duck typing 只能出现在动态语言中）。
+
+> Duck test: If it walks like a duck and it quacks like a duck, then it must be a duck.
+
+维基百科上写道：“在 duck typing 中，如果一个对象具有某类型所要求的所有方法和属性，则该对象属于该类型。duck typing 可以看作是给定对象和类型要求之间基于使用的结构等价。有关结构类型等价的进一步解释，请参阅 structural typing。”
+
+> In duck typing, an object is of a given type if it has all methods and properties required by that type. Duck typing can be viewed as a usage-based structural equivalence between a given object and the requirements of a type. See structural typing for a further explanation of structural type equivalence.
+
+duck typing 是运行期检查的，而且只检查用到的部分。例如：
+
+```python
+# interface
+class IFoo:
+    def foo(self): pass
+
+class A(IFoo):
+    def foo(self):
+        print(__name__)
+
+class B:
+    def foo(self):
+        print(__name__)
+
+def call_foo(x):
+    x.foo()
+
+call_foo(A())
+call_foo(B())
+```
+
+Go 实现的等价代码会表现出类似的行为，但是这里的测试并不全面——`IFoo` 仅有一个方法，如果扩展到两个方法的情况，Go 就跟 Python 不一样了：
+
+```go
+package main
+
+import "io"
+
+type A struct{}
+
+func (a A) Read(buf []byte) (n int, err error) {
+	return 0, nil
+}
+
+// func (a A) Close() error {
+// 	return nil
+// }
+
+func main() {
+	var a A
+	foo(a)
+}
+
+func foo(rc io.ReadCloser) {
+	data := make([]byte, 16)
+	rc.Read(data)
+}
+```
+
+使用 Go 1.20，这段代码报错如下：
+
+```plaintext
+cannot use a (variable of type A) as io.ReadCloser value in argument to foo: A does not implement io.ReadCloser (missing method Close)
+```
+
+看，哪怕实际上仅仅用到了 `Read`，编译器也要求 `rc` 所指向的 struct 实例必须实现 `Close`
+
+另外，在 Python 中，即使函数签名并不一致，只要名字存在并且参数数量能够匹配，即使方法签名不相同，依然能够运行：
+
+```python
+class A:
+    def foo(self, a, b):
+        print(a, b)
+
+class B:
+    def foo(self, x, y, *args):
+        print(x, y, *args)
+
+def qux(it):
+    it.foo(42, 3.14)
+
+qux(A())
+qux(B())
+```
+
+但是 Go 是不行的：
+
+```go
+package main
+
+type Speaker interface {
+	Speak()
+}
+
+type A struct{}
+
+func (a A) Speak(words ...string) {
+	for _, w := range words {
+		println(w)
+	}
+}
+
+func main() {
+	var a A
+	a.Speak() // OK
+	foo(a) // Error
+}
+
+func foo(s Speaker) {
+	s.Speak()
+}
+```
+
+== Structural typing
+
+Go 的类型系统使用的是 structural typing。根据维基百科的说法：“结构类型系统（或基于属性的类型系统）是类型系统的一个主要类别，其中类型兼容性和等价性由类型的实际结构或定义决定，而不是由其他特征（例如名称或声明位置）决定。”Java 就是典型的基于名称的类型系统。
+
+> A structural type system (or property-based type system) is a major class of type systems in which type compatibility and equivalence are determined by the type's actual structure or definition and not by other characteristics such as its name or place of declaration.
+
+structural typing 用于静态类型系统。
+
+C++ 的模板使用的也是 structural typing。
+
+structural typing 一个显著的好处是不再需要使用侵入式的声明（像 Java 那样 `implements Xxx`），可以达到更灵活的效果，这一点在 Go 中展现的淋漓尽致——任何实现了（哪怕是碰巧）接口 `I` 的所有方法的 struct 实例都能作为 `I` 使用，这样为了扩展现有的类，可以不用创建新类型。例如想要 mock 标准库中的 `http.Client`，可以创建一个接口：
+
+```go
+type Getter interface {
+    Get(url string) (*http.Response, error)
+}
+```
+
+这样 `http.Client` 就可以直接作为 `Getter` 的实例使用：
+
+```go
+// foo.go
+import "net/http"
+
+func printHomepage(c Getter) {
+    resp, err := c.Get("https://google.com")
+    if err != nil {
+        // ... do some error handling
+    }
+    // use resp
+}
+
+type AlwaysFail struct{}
+
+func (AlwaysFail) Get(_ string) (*http.Response, error) {
+    return nil, errors.New("!")
+}
+
+// foo_test.go
+func Test_printHomepage(t *testing.T) {
+    printHomepage(AlwaysFail{})
+}
+```
+
+如果在 Java 中，这就需要 `extends` 现有的 `HttpClient`，然后 override `get` 方法；如果 `HttpClient` 是 `final` 的或者 `get` 是 `final` 的，就不得不创建新接口和包装类型。
+
+
+但是这种灵活性也是双刃剑——两个结构相同但是完全没有逻辑关系的类型会被类型系统认为是一样的。实现 Java 那样的标记接口（例如 `Cloneable`）比较麻烦，Go 的 parser 中就有典型的例子，为了区分 `Stmt` 和 `Expr`，两个接口必须各自带一个不同名的空方法（初学的时候，我确实是有点震惊）：
+
+```go
+// 注意两个方法的首字母都是小写的，意味着不能被外部调用
+type Stmt interface {
+    stmtNode()
+}
+
+type Expr interface {
+    exprNode()
+}
+```
+
+== 结论
+
+科普确实是很需要水平的工作，既需要作者对传播的知识有深刻、准确的理解，又需要作者能够用简明易懂的语言讲出来。
+
+这已经是我第二次在 B 站上怼所谓的“科普”up 主了，如果 CS 相关内容是这样的话，想来其他领域也多多少少会有这种现象。强烈建议 B 站的知识区引入同行评审机制。
+
+== 参考
+
+1. Duck typing - Wikipedia: https://en.wikipedia.org/wiki/Duck_typing
+2. Structural typing - Wikipedia: https://en.wikipedia.org/wiki/Structural_type_system
+
