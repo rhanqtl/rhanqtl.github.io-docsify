@@ -1,0 +1,108 @@
+---
+title: "问题排查记录：Git SSH 无法克隆"
+draft: true
+---
+
+== 现象
+
+使用 `git clone` 克隆 SSH 仓库时，报错：
+
+....
+Cloning into 'the-art-of-command-line'...
+ssh: connect to host github.com port 22: Connection refused
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+....
+
+== 我的环境
+
+* Windows 11 + WSL2
+* 发行版为 Arch Linux
+* Linux 内核版本 5.15.90.1
+
+== 过程
+
+首先确认网络是否连通，由于 WSL 中 `ping github.com` 解析成了 `127.0.0.1`，只能用 `ping baidu.com` 确认。另外还通过浏览器访问了 github.com。均正常。
+
+然后根据 Stack Overflow 上的link:https://stackoverflow.com/questions/13509293/git-fatal-could-not-read-from-remote-repository[这个问题]确认了 ssh-agent 和 SSH key 正常。
+
+接下来看 SSH 的输出：
+
+....
+$ ssh -vvv git@github.com
+....
+
+发现了异常：
+
+....
+...
+debug2: resolving "github.com" port 22
+debug3: resolve_host: lookup github.com:22
+debug3: ssh_connect_direct: entering
+debug1: Connecting to github.com [0.0.0.0] port 22.
+debug3: set_sock_tos: set socket 3 IP_TOS 0x48
+debug1: connect to address 0.0.0.0 port 22: Connection refused
+debug1: Connecting to github.com [::] port 22.
+...
+....
+
+注意到 `github.com` 被解析成了 `0.0.0.0`，这是一个通配符地址，客户端不能使用这个建立连接，说明可能是 DNS 的问题。
+
+通过 `dig` 确认问题：
+
+....
+$ dig +short github.com
+0.0.0.0
+....
+
+通过 `1.1.1.1` 查询：
+
+....
+;; Warning: Message parser reports malformed message packet.
+
+; <<>> DiG 9.18.14 <<>> github.com @1.1.1.1
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 22442
+;; flags: qr; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;github.com.                    IN      A
+
+;; ANSWER SECTION:
+.                       0       CLASS1232 OPT   10 8 FOPnrs1gjN0=
+
+;; ADDITIONAL SECTION:
+github.com.             6       IN      A       0.0.0.0
+
+;; Query time: 50 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Sat May 06 20:53:53 CST 2023
+;; MSG SIZE  rcvd: 67
+....
+
+但是通过查询 `google.com` 和 `youtube.com` 的 IP，发现 DNS 服务本身应该是没问题。
+
+重启 WSL 之后上述情况没有改变，根据link:https://superuser.com/questions/1680644/how-do-you-see-the-os-dns-cache-on-linux[这个问题]确认了 DNS 没有缓存，另外 `systemd-resolve` 查询依然返回 `0.0.0.0`：
+
+....
+$ systemd-resolve github.com
+....
+
+根据link:https://www.siteground.com/kb/flush-dns-cache-in-linux/#Find_your_local_DNS_resolver[这篇文章]中的办法清理了 DNS 缓存，依然不行。
+
+使用 `ipconfig /flushdns` 清空了本机的 DNS 缓存，同时清空了 Chrome 的 link:chrome://net-internals/?#dns[DNS 缓存]
+
+image::images/chrome-dns-cache.png[]
+
+另外通过本机的 `nslookup - 1.1.1.1` 查询 GitHub 也是 `0.0.0.0`
+
+换成个人热点也无济于事
+
+当然还有代理，关了依然不行
+
+甚至link:https://www.reddit.com/r/dns/comments/c41az0/dns_corruption_issue/[重启了路由器] XD
+
+不得不暂时改成 HTTPS 访问，好在 VS Code 有 GitHub 插件不需要手动输入账号密码
