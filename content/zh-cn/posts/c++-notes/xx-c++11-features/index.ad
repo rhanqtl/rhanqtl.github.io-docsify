@@ -1,0 +1,985 @@
+---
+title: "C++11 新特性笔记"
+date: 2023-05-08
+tags: ["c/c++"]
+draft: false
+---
+
+本文参照 Bjarne 在 HOPL IV 列出的大纲整理 C++11 新特性的要点。
+
+== 语言特性
+
+=== auto 和 decltype
+
+`auto` 用于根据 initializer 推断数据对象的类型
+
+[source,c++]
+----
+auto i = 7;          // i is an int
+auto d = 7.2;        // d is a double
+auto it = v.begin(); // p gets the type of v's iterator
+----
+
+NOTE: `auto` 在 C 中本来用于标记变量是一个“自动（automatic）变量”，C++11 复用了这个关键字。
+
+NOTE: 据 Bjarne 的说法，他在 1982/83 就实现了 `auto` 类型推断，但是为了保持与 C 的兼容性又给移除了。
+
+除了减少输入的好处，`auto` 还能够表示一些很复杂的类型，例如 lambda 表达式的类型：
+
+[source,c++]
+----
+auto cmp = [](int lhs, int rhs) { return lhs > rhs; };
+----
+
+不过 `auto` 有一些需要注意的地方：
+
+[source,c++]
+----
+void foo() {
+    int i = 42, &r1 = i;
+    const int &r2 = i;
+
+    auto x = r1;  // x is of type int rather than int &
+    auto y = r2;  // y is of type int
+    auto &z = r1; // z is of type int &
+    auto &w = r2; // w is of type const int &
+}
+----
+
+`auto` 一般会忽略顶层 `const`，保留底层 `const`：
+
+[source,c++]
+----
+void foo() {
+    int i = 0;
+    const int ci = i, &cr = ci;
+
+    auto b = ci;  // int
+    auto c = cr;  // int
+    auto d = &i;  // int *
+    auto e = &ci; // const int *
+}
+----
+
+如果想要保留顶层 `const`，需要显式指定：
+
+[source,c++]
+----
+void foo() {
+    int i = 42;
+    int *const p = &i;
+    auto a = p;       // int *
+    const auto b = p; // int *const
+}
+----
+
+除此之外，C++11 还引入了尾置返回类型：
+
+[source,c++]
+----
+// These two are equivalent:
+auto f() -> int; // ->int is optional
+int f();
+----
+
+`decltype` 用于在不求值的情况下获取表达式的类型，可以用来：
+
+* 声明返回类型
++
+[source,c++]
+----
+// error: x was not declared in this scope
+template <typename T1, typename T2>
+decltype(x+y) foo(T1 x, T2 y) { ... }
+
+// Instead, use
+template <typename T1, typename T2>
+auto bar(T1 x, T2 y) -> decltype(x+y) { ... }
+----
+* 模板元编程
+* 传递 lambda 的类型，详见后面关于 lambda 的部分
+
+`decltype` 会保留顶层 `const` 和引用：
+
+[source,c++]
+----
+const int ci = 0, &cr = ci;
+decltype(ci) x = 0; // const int, OK
+decltype(cr) y = x; // const int &, OK
+decltype(cr) z;     // const int &, error
+----
+
+特别需要注意的是如下的情况：
+
+[source,c++]
+----
+int i = 42;
+decltype((i)) a; // int &, error
+decltype(i) b;   // int
+----
+
+即，`decltype((v))` 永远是引用，而 `decltype(v)` 只有在 `v` 本身是引用时才是引用
+
+
+=== lambda 表达式
+
+在 C++11 之前，如果一个函数需要另一个函数作为参数，有两种选择：
+
+* 从 C 继承下来的函数指针
+* 传入一个重载了 `operator()` 的类型的对象，有时候称为“functor”
+
+这两个选择存在同一个问题：如果一个简单函数仅会被调用一次，依然要完整地将其定义出来（函数指针还不能捕获词法作用域中的数据对象）。lambda 表达式作为匿名函数改变了这一点。
+
+lambda 表达式的完整形式：
+
+....
+[] () mutable throw-spec ->return-type { ... }
+....
+
+其中 `()` `mutable`、_throw-spec_ 和 _->return-type_ 都是可选的，但是任何一个出现，参数列表 `()` 都必须出现：
+
+* `[]` 是捕获列表，用于指定如何捕获词法作用域中的非静态数据对象
+* `()` 是参数列表
+* `mutable` 是一个关键字，用于声明按值捕获的数据能否修改
+* throw-spec 可以是 `noexcept` 和 `throw`（除了 `throw()`，其他形式在 C++11 废弃）
+* return-type 用于标示返回类型，大多数情况下都能够根据返回值自动推导
+
+例如：
+
+[source,c++]
+----
+void foo() {
+    // uniform initialization
+    std::vector<int> nums { 4, 5, 2, 3, 6, 1 };
+    // reverse order
+    std::sort(nums.begin(), nums.end(), [](int lhs, int rhs) { return lhs > rhs; });
+}
+----
+
+可以在 cppinsights.io 看到 Clang 是通过 `struct` 来实现的。
+
+捕获有两种形式：
+
+* 按值捕获 by value，使用 `=` 表示
+* 按引用捕获 by reference，使用 `&` 表示
+
+一个 `lambda` 可以在捕获列表的最开始指定默认的捕获方式，然后额外指定以相反方式捕获的数据对象。
+
+
+[source,c++]
+----
+void foo(int target) {
+    std::vector<int> nums { 4, 5, 3, 6, 2, 5, 1 };
+    // capture by value
+    std::count_if(nums.cbegin(), nums.cend(), [target](int x) { return x == target; });
+}
+
+void bar() {
+    int x = 0;
+    int y = 42;
+    // capture x by value and y by reference
+    auto f1 = [x, &y] {};
+    // capture y by reference and all other objects by value
+    auto f2 = [=, &y] {};
+}
+----
+
+被捕获的数据对象必须以某种方式指定了捕获方式，否则编译失败：
+
+[source,c++]
+----
+void foo(int target) {
+    std::vector<int> nums { 4, 5, 3, 6, 2, 5, 1 };
+    // error: variable 'target' cannot be implicitly captured in a lambda with no capture-default specified
+    std::count_if(nums.cbegin(), nums.cend(), [](int x) { return x == target; });
+}
+----
+
+按值捕获的数据对象在 lambda 的函数体中是不能够修改的：
+
+[source,c++]
+----
+void foo(int x) {
+    // error: cannot assign to a variable captured by copy in a non-mutable lambda
+    auto f = [x] { x++; };
+
+    // OK. Notice the empty argument list.
+    auto g = [x] () mutable { x++; };
+}
+----
+
+从 cppinsights 可以看到如果没有 `mutable`，lambda 所对应的函数对象的 `operator()` 带有 `const` 标记（这里同时也需要注意，每个 lambda 对应的匿名函数对象的类型都是不同的）：
+
+[source,c++]
+----
+int main() {
+  int x = 42;
+  auto f = [x] {};
+  auto g = [x] () mutable {};
+  auto h = [&x] {};
+}
+----
+
+特别注意，按值捕获的数据对象在 lambda 的函数体中跟原来的是不同的：
+
+[source,c++]
+----
+void foo() {
+    int x = 0;
+    auto f = [x] () mutable {
+        std::cout << x << '\n';
+        x++;
+    };
+    x = 42;
+    f(); f(); f();
+    std::cout << x << '\n';
+}
+----
+
+输出为
+
+....
+0
+1
+2
+42
+....
+
+还需要注意的是，lambda 没有默认的构造函数和赋值操作符（很遗憾，也无法指定），但是可以有默认的拷贝构造函数和移动构造函数：
+
+[source,c++]
+----
+auto cmp = [](const Person &lhs, const Person &rhs) {
+    return (lhs.last_name() < rhs.last_name()) ||
+           (lhs.last_name() == rhs.last_name() && lhs.first_name() < rhs.first_name());
+};
+
+std::set<Person, decltype(cmp)> people(cmp); <1>
+----
+
+<1> 这里 `cmp` 是必须传入的，否则会调用 `set` 的默认构造函数，它会调用 lambda 的默认构造函数：
++
+[source,c++]
+----
+template <class Key,
+          class Compare = less<Key>,
+          class Alloc = alloc>
+class set {
+    ...
+public:
+  // t is a field of type rb_tree
+  set(): t(Compare()) {}
+  explicit set(const Compare &comp): t(comp) {}
+};
+----
+
+最后一个需要注意的地方是捕获 `this` 的方法：
+
+[source,c++]
+----
+class Scaler {
+public:
+    explicit Scaler(int s): scale_(s) {}
+
+    // error: 'this' was not captured for this lambda function
+    void apply_1(const vector<int> &v) {
+        for_each(v.begin(), v.end(), [](int n) { cout << n * scale_ << endl; });
+    }
+
+    // capture "this" by reference
+    void apply_2(const vector<int> &v) const {
+        // scale_ *= 2; // error: assignment of 'Scaler::scale_' in read-only object (even if with mutable)
+        for_each(v.begin(), v.end(), [this](int n) { cout << n * scale_ << endl; });
+    }
+
+    // capture "this" by ref implicitly, '&' also works
+    void apply_3(const vector<int> &v) const {
+        for_each(v.begin(), v.end(), [=](int n) { cout << n * scale_ << endl; });
+    }
+
+private:
+    int scale_;
+};
+----
+
+详见link:https://www.nextptr.com/tutorial/ta1430524603/capture-this-in-lambda-expression-timeline-of-change[这篇文章]最开始的表格。
+
+如果想要按值捕获 `this`，在 C++11 中只能这样：
+
+```c++
+void apply(const vector<int> &v) const {
+    auto copy = *this;
+    for_each(v.begin(), v.end(), [&copy](int n) { ... });
+}
+```
+
+
+=== 移动语义和右值引用
+
+==== Universal Reference
+
+`&&` 并不总是表示右值引用
+
+详情参见 https://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers
+
+对日常编程最有用的经验法则：如果变量或者形参被声明为 `T &&` 类型，而 `T` 是一个推导类型（deduced type），那么这个变量或者形参是 universal reference，注意到 `auto` 使用跟模板相同的类型推断方法，因此 `auto &&` 也可以是 universal reference。
+
+[source,c++]
+----
+template <typename T>
+void take_lref_only(T &&arg) {
+    static_assert(std::is_lvalue_reference<T>::value, "not a lvalue reference");
+}
+
+int main() {
+    int a = 42;
+    take_lref_only(a);
+    auto &&b = a;
+    static_assert(std::is_lvalue_reference<decltype(b)>::value, "not a lvalue reference");
+}
+----
+
+编译能够通过，在 cppinsights 可以看到这样的字样：
+
+[source,c++]
+----
+/* PASSED: static_assert(std::integral_constant<bool, 1>::value); */
+----
+
+NOTE: 右值一般满足如下条件之一：（1）临时对象；（2）没有名字；（3）不能取地址。
+
+不过下面的 `&&` 不是 universal reference：
+
+[source,c++]
+----
+template <typename T>
+void f(std::vector<T> &&param);
+
+template <typename T>
+void f(const T &&param);
+
+template <class T, class Allocator = allocator<T>>
+class vector {
+public:
+    ...
+    void push_back(T&& x);       // fully specified parameter type ⇒ no type deduction;
+    ...                          // && ≡ rvalue reference
+};
+----
+
+最后一种情况可以这样看：
+
+[source,c++]
+----
+template <class T>
+void vector<T>::push_back(T&& x);
+----
+
+`push_back` 的存在依赖于 `std::vector<T>`，而类模板已经将 `T` 的类型推导出来了，因此到 `push_back` 的时候就不再需要推导。
+
+对于 universal reference，当参数为左值时，推导类型为 `T&`，而参数为右值时推导类型为 `T` 而不是 `T&&`，而 $$C++$$ 是不允许“” 的（因为 ref 根本不是一个实体，只是别名），因此 $$C++11$$ 引入了所谓的“reference collapsing”：
+
+* 右值引用的右值引用转换为右值引用
+* 其他都转换为左值引用
+
+```c++
+template <typename T>
+void f(T &&a) {}
+```
+
+`f(x)` 本来会导致 `T` 被推导为 `int &`，但是由于 reference collapsing 的存在，最终实例化的结果是 `f(int &)`
+
+如果变量本身是一个引用，引用会被忽略，例如
+
+```c++
+int x = 42;
+int &&r1 = 10;
+int &r2 = x;
+f(r1); // f(int &)
+f(r2); // f(int &)
+```
+
+reference collapsing 发生的位置：
+
+* 模板
+* `auto`
+* `typedef`
+* `decltype`
+
+
+==== 完美转发
+
+“完美转发”是指函数模板能够在不改变其参数的 type category 的情况下转发这些参数。
+
+[source,c++]
+----
+void foo(int &i) { std::cout << "foo(int &)\n"; }
+void foo(int &&i) { std::cout << "foo(int &&)\n"; }
+void fwd(int &&i) { foo(i); }
+
+int main() {
+    int a = 42;
+    foo(a);            // foo(int &)
+    foo(1);            // foo(int &&)
+    foo(std::move(a)); // foo(int &&)
+    fwd(a);            // error
+    fwd(1);            // foo(int &) ?
+    fwd(std::move(a)); // foo(int &) ?
+}
+----
+
+注意看上面最后两行，我们预期的是 `foo(int &&)`，结果却是 `foo(int &)` 这是为什么呢？因为 `fwd` 中 `i` 变成了一个具名对象（named object）。可以这样修改：
+
+[source,c++]
+----
+template <typename T>
+void fwd(typename std::remove_reference<T>::type &t) noexcept {
+    foo(static_cast<T &&>(t));
+}
+
+template <typename T>
+void fwd(typename std::remove_reference<T>::type &&t) noexcept {
+    foo(static_cast<T &&>(t));
+}
+----
+
+不过调用点需要修改成：
+
+[source,c++]
+----
+fwd<int>(1);            // foo(int &&)
+fwd<int>(std::move(a)); // foo(int &&)
+----
+
+完美转发的一般模式：
+
+[source,c++]
+----
+template <typename... Args>
+void wrapper(Args&&... args) {
+    func(std::forward<Args>(args)...);
+}
+----
+
+两个必备要素：
+
+* universal reference `&&`，既能够引用左值也能够引用右值
+* `std::forward`
+
+TIP: `...` 在 `Args` 的左边表示打包，在右边表示解包
+
+这里 `std::forward` 能够保持原来 type category 是因为其参数是 universal reference
+
+
+=== 泛型编程
+
+==== 变参模板
+
+[source,c++]
+----
+void print_all() {}
+
+template <typename T, typename... Ts>
+void print_all(const T &car, const Ts&... cdr) {
+    std::cout << car << '\n';
+    print_all(cdr...);
+}
+----
+
+在 cppinsights.io 可以看到详细的实例化结果。
+
+在继承中也可以使用：
+
+[source,c++]
+----
+template <typename... Values> struct MyTuple;
+
+template <>
+struct MyTuple<> {};
+
+template <typename Head, typename... Tail>
+struct MyTuple<Head, Tail...> : private MyTuple<Tail...> {};
+----
+
+能够实现一些神奇的功能：
+
+[source,c++]
+----
+template <typename T,
+          template <typename>
+          class Container
+         >
+void f() {
+    Container<T> c;
+    c.insert(c.end(), T());
+}
+
+template <typename T>
+using Vec = std::vector<T>;
+
+int main() {
+    // error: template std::vector requires 2 arguments but 1 is passed.
+    f<std::string, std::vector>();
+    f<std::string, Vec>();
+}
+----
+
+使用 `sizeof...(args)` 获取参数的数量
+
+[source,c++]
+----
+template <size_t ix, size_t ed, typename... Args>
+struct PrintTupleHelper {
+    static void print(std::ostream &out, const std::tuple<Args...> &tp) {
+        out << std::get<ix>(tp) << (ix+1 == ed ? "" : ", ");
+        PrintTupleHelper<ix+1, ed, Args...>::print(out, tp);
+    }
+};
+
+template <size_t ed, typename... Args>
+struct PrintTupleHelper<ed, ed, Args...> {
+    static void print(std::ostream &out, const std::tuple<Args...> &tp) {}
+};
+
+template <typename... Args>
+std::ostream &operator<<(std::ostream &out, const std::tuple<Args...> &tp) {
+    out << '(';
+    PrintTupleHelper<0, sizeof...(Args), Args...>::print(out, tp);
+    return (out << ')');
+}
+----
+
+==== 模板别名
+
+[source,c++]
+----
+template <typename T>
+using Vec = std::vector<T, MyAlloc<T>>;
+----
+
+模板别名不支持特化
+
+=== 统一初始化
+
+编译器看到 `{ t~~1~~, t~~2~~, ..., t~~n~~ }` 就会生成一个 `initializer_list<T>`，内部关联一个 `array<T, n>`。调用函数（包括 ctor）时如果有接收 `initializer_list<T>` 的重载，使用该重载版本，否则 `array` 内的元素会被编译器分解逐一传递给参数。但如果参数是 `initializer_list<T>`，不允许反过来仅仅传入数个分开的参数。
+
+统一初始化使得类型更加安全：
+
+* 强制使用 value initialization，即，基础类型的局部变量会被初始化为零值（0 或 `nullptr`）
++
+[source,c++]
+----
+int i;    // undefined
+int j {}; // 0
+----
+
+* 不允许 narrowing initialization
++
+[source,c++]
+----
+int i { 3.14 }; // error
+----
+
+`initializer_list` 有一个 `private` 的构造函数，在遇到 `{...}` 时编译器会调用该构造函数
+
+[source,c++]
+----
+void foo() {
+    std::vector<int> nums{1, 2, 3, 4, 5, 6};
+}
+----
+
+生成的汇编如下：
+
+[source,plaintext]
+----
+foo():
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 80
+    mov     DWORD PTR [rbp-48], 1
+    mov     DWORD PTR [rbp-44], 2
+    mov     DWORD PTR [rbp-40], 3
+    mov     DWORD PTR [rbp-36], 4
+    mov     DWORD PTR [rbp-32], 5
+    mov     DWORD PTR [rbp-28], 6
+    lea     rcx, [rbp-48]
+    mov     rax, rcx
+    mov     edx, 6
+    lea     rcx, [rbp-9]
+    mov     QWORD PTR [rbp-8], rcx
+    nop
+    nop
+    lea     rcx, [rbp-9]
+    mov     rsi, rax
+    mov     rdi, rdx
+    lea     rax, [rbp-80]
+    mov     rdi, rax
+    ;; rdi contains the address of nums
+    ;; rsi contains the pointer to the first element of the underlying array of initializer_list
+    ;; rdx contains the length of the array
+    ;; rcx contains the address of the allocator (seems it's empty)
+    call    std::vector<int, std::allocator<int> >::vector(std::initializer_list<int>, std::allocator<int> const&) [complete object constructor]
+    lea     rax, [rbp-9]
+    mov     rdi, rax
+    call    std::__new_allocator<int>::~__new_allocator() [base object destructor]
+    nop
+    lea     rax, [rbp-80]
+    mov     rdi, rax
+    call    std::vector<int, std::allocator<int> >::~vector() [complete object destructor]
+    leave
+    ret
+----
+
+=== 其他
+
+==== range-for
+
+....
+for ( decl : coll ) {
+    statement
+}
+....
+
+实际上会转换为使用 `begin`/`end`，另外如果 `coll` 不是变量的话，会创建额外的变量接收其结果，然后在这个额外的变量上调用 `begin`/`end`：
+
+....
+for (auto _pos = coll.begin(), _end = coll.end(); _pos != _end; ++_pos) {
+    decl = *_pos;
+    statement
+}
+
+for (auto _pos = begin(coll), _end = end(coll); _pos != _end; ++_pos) {
+    decl = *_pos;
+    statement
+}
+....
+
+注意 range-for 是不会做 `explicit` 转换的：
+
+[source,c++]
+----
+class C {
+public:
+    explicit C(const std::string &);
+};
+
+void foo(const vector<std::string> &ss) {
+    // error
+    for (const C &e : ss) {
+        ...
+    }
+}
+----
+
+==== 枚举类
+
+从 C 继承下来的 `enum` 会将其中的符号导入全局作用域（因此可能会跟宏定义或其他 `enum` 冲突），而且可以设置 variant 之外的值（非类型安全），C++11 的枚举类解决了这两个问题：
+
+```c++
+enum Token {
+    // EOF is defined for I/O
+    _EOF = 0,
+    COMMENT = -1,
+    KW_IF = -2,
+};
+
+void foo() {
+    Token tok = '+';
+}
+```
+
+[source,c++]
+----
+// Use int as underlying type
+enum class {
+    Variant1,
+    Variant2,
+};
+----
+
+此外从 C++11 开始还能够指定底层的存储整数类型：
+
+```c++
+enum Byte : unsigned char {};
+```
+
+==== nullptr、noexcept、override、final 和 constexpr
+
+在 C++11 之前，想要设置空指针只能够使用从 C 继承来的 NULL，但是可能会有问题：
+
+[source,c++]
+----
+void f(int);
+void f(void *);
+
+// if NULL is defined as:
+#define NULL (0)
+
+void foo() {
+    // error: call to 'f' is ambiguous
+    f(NULL);
+}
+----
+
+`nullptr` 的类型是 `std::nullptr_t`，可以被转换为任何指针类型，但是不能够转换为整数类型。
+
+`noexcept` 用于声明函数在（一定条件下）不会抛出异常，如果在满足条件的情况下抛出了异常，会调用 `std::terminate` 结束程序。
+
+[source,c++]
+----
+// These are equivalent:
+void foo() noexcept;
+void foo() noexcept(true);
+
+// swap does not throw as long as x.swap(y) does not throw
+void swap(T &x, T &y) noexcept(noexcept(x.swap(y)));
+----
+
+https://stackoverflow.com/questions/8001823/how-to-enforce-move-semantics-when-a-vector-grows
+
+`override` 用于检查子类的 `virtual` 成员函数确实重写了父类的 `virtual` 成员函数
+
+`final` 的效果跟 Java 的一样：
+
+* 修饰 `class`，表示不能被继承
+* 修饰虚函数，表示不能被 override
+
+[source,c++]
+----
+struct A {
+    virtual void f(int) {}
+};
+
+struct B : A {
+    // error
+    virtual void f(double) override {}
+};
+----
+
+`constexpr` 用于修饰变量或者函数（包括构造函数），用于实现编译期计算。在修饰变量时，变量必须在编译期初始化，而修饰函数时，只有在必须进行编译期计算的情况下才这样做，参见 https://learn.microsoft.com/en-us/cpp/cpp/constexpr-cpp?view=msvc-170
+
+==== explicit 新功能
+
+能够用于多个参数的构造函数，防止如下形式：
+
+[source,c++]
+----
+A a = {1, 2}; // error
+A b {1, 2};   // OK
+----
+
+详见 cppreference 的link:https://en.cppreference.com/w/cpp/language/explicit[示例]
+
+
+==== 默认成员 initializer
+
+[source,c++]
+----
+struct A {
+    int x;
+    A(): x(42) {}
+};
+----
+
+可以简化：
+
+[source,c++]
+----
+class A {
+    int x = 42;
+};
+----
+
+应该尽可能使用这个特性，最大程度地避免直接写构造函数
+
+==== 用户定义字面量
+
+允许自定义后缀，不过接收的参数非常局限，只有 `long double` 和 `const char *`
+
+```c++
+constexpr Imaginary operator""i(long double x) { return Imaginary(x); }
+```
+
+然后就可以 `1.2 + 3.4i`
+
+==== 字符串字面量
+
+在写 regex 时很有用
+
+```c++
+std::regex p1 {"\\w{2}\\s*\\d{5}(-\\d{4})?"}; // ordinary literal
+std::regex p2 {R"(\w{2}\s*\d{5}(-\d{4})?)"};  // raw literal
+// customized delimiter:
+std::regex p2 {R"::(hello)::"};  // raw literal
+```
+
+括号中的内容只要不包含 `)_delimiter_` 即可，这个特性在可能会包含括号时很有用。
+
+```c++
+std::regex p3 {R"--((()()))--"};
+```
+
+==== 属性
+
+在 $$C++11$$ 之前，编译器本身也支持 `__attribute__(())` 声明属性，现在只不过是规范化了，而且 $$C++11$$ 仅提供了两个标准属性。
+
+```c++
+[[noreturn]] void forever() {
+    while (true)
+        ;
+}
+```
+
+== 库
+
+=== 智能指针
+
+三个新的智能指针 `std::shared_ptr` `std::unique_ptr` 和 `std::weak_ptr`
+
+详见 CppCon 2020 上 Rainer Grimm 的 Smart Pointers 讲座
+
+==== $$enable_shared_from_this$$
+
+关于为什么需要 `enable_shared_from_this`，参见link:https://stackoverflow.com/questions/712279/what-is-the-usefulness-of-enable-shared-from-this[这个回答]
+
+==== Aliasing Constructor
+
+Aliasing Ctor 有两个参数，分别为 owned pointer 和 stored pointer，前者是常规的引用计数（即，构造时增加引用计数，析构时减少引用计数，`use_count` 返回的是 owned pointer 的引用计数），后者不会管理引用计数，但是 `operator*` 会返回其引用。
+
+这个功能可以用于指向已经被托管（managed）的对象的成员，跟 buffer pool 的 pin 操作有一点相似：
+
+```c++
+#include <memory>
+
+struct A {
+    int *data;
+    A(): data(new int {42}) {}
+    ~A() {
+        if (data)
+            delete data;
+    }
+};
+
+int main() {
+    std::shared_ptr<int> p2;
+    {
+        std::shared_ptr<A> p1 = std::make_shared<A>();
+        p2 = std::shared_ptr<int>(p1, p1->data);
+    }
+    std::cout << *p2 << '\n';
+}
+```
+
+注意 `p1` 和 `p2` 类型的差别。如果 `p2` 没有 co-own `p1`（例如 `p2` 仅仅是一个 `int *`），那么 `p1` 离开作用域时，其管理的对象就会被析构，这样最后一行就可能访问到垃圾数据（例如，我在 Compiler Explorer 上测试的结果是打印 `0` 而非 `42`）。
+
+
+下面是来自 cppreference 的一个示例：
+
+[source,c++]
+----
+#include <iostream>
+#include <memory>
+
+struct MyObj {
+    MyObj() { std::cout << "\x1b[1;32mMyObj constructed\x1b[0m\n"; }
+    ~MyObj() { std::cout << "\x1b[1;32mMyObj destructed\x1b[0m\n"; }
+};
+
+// note: public inheritance
+struct Container : std::enable_shared_from_this<Container> {
+    std::shared_ptr<MyObj> memberObj;
+
+    void CreateMember() { memberObj = std::make_shared<MyObj>(); }
+    std::shared_ptr<MyObj> GetAsMyObj() {
+        return std::shared_ptr<MyObj>(shared_from_this(), memberObj.get());
+    }
+};
+
+#define COUT(str) std::cout << "\n=== " << str << " ===\n"
+#define DEMO(...) std::cout << #__VA_ARGS__ << " = " << __VA_ARGS__ << '\n'
+
+int main() {
+    COUT("Creating shared container");
+    std::shared_ptr<Container> cont = std::make_shared<Container>();
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+
+    COUT("Creating member");
+    cont->CreateMember();
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+
+    COUT("Creating another shared container");
+    std::shared_ptr<Container> cont2 = cont;
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+    DEMO(cont2.use_count());
+    DEMO(cont2->memberObj.use_count());
+
+    COUT("GetAsMyObj");
+    std::shared_ptr<MyObj> myobj1 = cont->GetAsMyObj();
+    // myobj1 co-owns the object pointed-to by cont, so the result of use_count is the same as cont
+    DEMO(myobj1.use_count());
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+    DEMO(cont2.use_count());
+    DEMO(cont2->memberObj.use_count());
+
+    COUT("Copying alias obj");
+    std::shared_ptr<MyObj> myobj2 = myobj1;
+    DEMO(myobj1.use_count());
+    DEMO(myobj2.use_count());
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+    DEMO(cont2.use_count());
+    DEMO(cont2->memberObj.use_count());
+
+    COUT("Resetting cont2");
+    cont2.reset();
+    DEMO(myobj1.use_count());
+    DEMO(myobj2.use_count());
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+
+    COUT("Resetting myobj2");
+    myobj2.reset();
+    DEMO(myobj1.use_count());
+    DEMO(cont.use_count());
+    DEMO(cont->memberObj.use_count());
+
+    COUT("Resetting cont");
+    cont.reset();
+    DEMO(myobj1.use_count());
+    DEMO(cont.use_count());
+}
+----
+
+=== 并发编程
+
+是一块很大的内容，详见 C++ Concurrency in Action 这本书
+
+==== exception_ptr
+
+参见 https://cplusplus.com/reference/exception/exception_ptr/
+
+=== tuple
+
+参见 https://www.geeksforgeeks.org/tuples-in-c/
+
+=== emplace
+
+`emplace` 主要是为了避免构造临时对象，这个特性需要基于 variadic template 和完美转发，参见 link:https://www.stroustrup.com/C++11FAQ.html[$$C++11$$ FAQ] 的 _Container improvements_ 一节，另外可以参见 https://stackoverflow.com/questions/4303513/push-back-vs-emplace-back
+
+示例见 https://cplusplus.com/reference/map/map/emplace/，需要注意 `map` 的 `insert` 函数对于 `std::pair` 没有右值引用的版本，参见 https://cplusplus.com/reference/map/map/insert/
+
+
+[bibliography]
+== 参考
+
+* [[[ms-lambda-intro]]] https://learn.microsoft.com/en-us/cpp/cpp/lambda-expressions-in-cpp?view=msvc-170
+* [[[ms-lambda-examples]]] https://learn.microsoft.com/en-us/cpp/cpp/examples-of-lambda-expressions?view=msvc-170
+* [[[cppref-auto,auto - cppreference]]] https://en.cppreference.com/w/cpp/language/auto
+* [[[perfect-forward-modernescpp]]] https://www.modernescpp.com/index.php/perfect-forwarding
+* [[[ref-collapse,C++ Reference Collapsing]]] https://leimao.github.io/blog/CPP-Reference-Collapsing/
+* [[[jjhou-11-14-new-features,C++11/14 新特性 by 侯捷]]] 版权原因，请自行搜索
